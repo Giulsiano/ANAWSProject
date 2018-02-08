@@ -19,6 +19,8 @@ public class Main {
 	        
 	        ssh.connect("localhost");
 	        try {
+	        	// PROGETTIIIIINOOOO
+	        	// che palle!
 	        	String[] command = {"/usr/bin/vtysh", "-d", "ospfd", "-c", "show ip ospf database"};
 	            ssh.authPassword("user", "user");
 	            Runtime rt = Runtime.getRuntime();
