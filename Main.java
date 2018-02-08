@@ -34,6 +34,7 @@ public class Main {
 	        } finally {
 	            ssh.disconnect();
 	        }
+	        System.exit(0);
 	    }
 
 }
