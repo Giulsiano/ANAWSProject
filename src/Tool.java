@@ -1,4 +1,4 @@
-
+//main del tool
 public class Tool {
 	
 	static String input;

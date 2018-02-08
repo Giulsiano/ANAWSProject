@@ -1,3 +1,5 @@
+//Classe di supporto contenente l'implementazione delle 5 funzioni presentate nel menu
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -9,6 +11,7 @@ import net.schmizz.sshj.connection.channel.direct.Session.Command;
 public class Functions {
 
 	public static void connectToRouter() throws IOException {
+		//provvisorio ma penso rimarrà in questa posizione
 	        final SSHClient ssh = new SSHClient();
 	        ssh.loadKnownHosts();
 	        ssh.connect("localhost");
@@ -34,7 +37,7 @@ public class Functions {
 		
 	}
 	
-	public static void shwTopology() {
+	public static void showTopology() {
 		
 	}
 	
