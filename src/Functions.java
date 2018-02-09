@@ -1,26 +1,21 @@
-package core;
+//Classe di supporto contenente l'implementazione delle 5 funzioni presentate nel menu
+
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.common.IOUtils;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Session.Command;
 
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-public class Main {
+public class Functions {
 
-	/**
-	 * @param args
-	 */
-	 public static void main(String... args)
-	            throws IOException {
+	public static void connectToRouter() throws IOException {
+		//provvisorio ma penso rimarrà in questa posizione
 	        final SSHClient ssh = new SSHClient();
 	        ssh.loadKnownHosts();
-	        // commento a caso
-	        
 	        ssh.connect("localhost");
 	        try {
-	        	// PROGETTIIIIINOOOO
-	        	// che palle!
 	        	String[] command = {"/usr/bin/vtysh", "-d", "ospfd", "-c", "show ip ospf database"};
 	            ssh.authPassword("user", "user");
 	            Runtime rt = Runtime.getRuntime();
@@ -38,6 +33,24 @@ public class Main {
 	        } finally {
 	            ssh.disconnect();
 	        }
-	    }
-
+	        System.exit(0);
+		
+	}
+	
+	public static void showTopology() {
+		
+	}
+	
+	public static void configureDF() {
+		
+	}
+	
+	public static void defineNewClass() {
+		
+	}
+	
+	public static void showRunningConf() {
+		
+	}
 }
+
