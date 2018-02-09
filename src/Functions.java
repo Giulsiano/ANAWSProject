@@ -11,6 +11,8 @@ import net.schmizz.sshj.connection.channel.direct.Session.Command;
 public class Functions {
 
 	public static void connectToRouter() throws IOException {
+			System.out.println("Connect to router, This is a test\n");
+			System.exit(0); //just for testing
 		//provvisorio ma penso rimarrà in questa posizione
 	        final SSHClient ssh = new SSHClient();
 	        ssh.loadKnownHosts();
@@ -34,22 +36,25 @@ public class Functions {
 	            ssh.disconnect();
 	        }
 	        System.exit(0);
-		
 	}
 	
 	public static void showTopology() {
+		System.out.println("Show Topology, This is a test\n");
 		
 	}
 	
 	public static void configureDF() {
+		System.out.println("Configure DiffServ, This is a test\n");
 		
 	}
 	
 	public static void defineNewClass() {
+		System.out.println("Define New Class, This is a test\n");
 		
 	}
 	
 	public static void showRunningConf() {
+		System.out.println("Show running configurations, This is a test\n");
 		
 	}
 }

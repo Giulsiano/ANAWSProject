@@ -1,14 +1,16 @@
+import java.io.IOException;
+
 //main del tool
 public class Tool {
 	
 	static String input;
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		System.out.println("Welcome in ANAWSTool!");
 		printMenu();
 	}
 	
-	public static void printMenu() {
+	public static void printMenu() throws IOException {
 		
 		System.out.println("-------------------------------------------------------------------------\n"
 				+ "1. Connect to router\n"
@@ -21,12 +23,12 @@ public class Tool {
 		waitForCommand();
 	}
 	
-	public static void waitForCommand() {
+	public static void waitForCommand() throws IOException {
 		input = System.console().readLine();
 		whatCommand(input);
 	}
 	
-	public static void whatCommand(String in) {
+	public static void whatCommand(String in) throws IOException {
 		
 		if(in.startsWith(".help")) {
 			printManual();
@@ -35,9 +37,37 @@ public class Tool {
 		if(in.startsWith(".exit"))
 			System.exit(0);
 		
+		int cmd = Integer.parseInt(in);
+		
+		switch(cmd) {
+			case 1:
+				Functions.connectToRouter();
+				break;
+		
+			case 2:
+				Functions.showTopology();
+				break;
+			
+			case 3:
+				Functions.configureDF();
+				break;
+			
+			case 4:
+				Functions.defineNewClass();
+				break;
+			
+			case 5:
+				Functions.showRunningConf();
+				break;
+			
+			default:
+				System.out.println("This command does not exist\n");
+				waitForCommand();
+		}
+		
 	}
 	
-	public static void printManual() {
+	public static void printManual() throws IOException {
 		System.out.println("1. Connect to router: consente all’admin di connettersi via ssh a un router.\n" + 
 				"2. Show topology: consente di visualizzare la topologia della rete sfruttando il demone ospfd.\n" + 
 				"3. Configure DiffServ: consente di configurare DiffServ su uno o tutti i router della rete in\n" + 
