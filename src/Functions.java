@@ -1,6 +1,9 @@
 //Classe di supporto contenente l'implementazione delle 5 funzioni presentate nel menu
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import net.schmizz.sshj.SSHClient;
@@ -11,13 +14,13 @@ import net.schmizz.sshj.connection.channel.direct.Session.Command;
 public class Functions {
 	
 	static final String USER = "cisco";
-	static final String PASSWORD = "cisco"
+	static final String PASSWORD = "cisco";
 	static final String[] VTYCOMMAND = {"/usr/bin/vtysh", "-d", "ospfd", "-c", "show ip ospf database"};
 	
 	public static void connectToRouter() throws IOException {
 			System.out.println("Connect to router, This is a test\n");
 			System.out.println("Getting router list");
-			ArrayList<String> routers = getRouterList();
+			ArrayList<String> routers = (ArrayList<String>) getRouterList();
 			if (routers == null) {
 				System.err.println("Error retrieving list of router");
 			}
@@ -25,20 +28,19 @@ public class Functions {
 	        ssh.loadKnownHosts();
 	        ssh.connect("localhost");
 	        try {
-	        	String[] command = 
-	            ssh.authPassword("user", "user");
-	            Runtime rt = Runtime.getRuntime();
-	            Process vtysh = rt.exec(command, null, null);
-	            System.out.println(IOUtils.readFully(vtysh.getInputStream()).toString());
-	            final Session session = ssh.startSession();
-	            try {	                
-	            	final Command cmd = session.exec("ping -c 1 8.8.8.8");
-	                System.out.println(IOUtils.readFully(cmd.getInputStream()).toString());
-	                cmd.join(5, TimeUnit.SECONDS);
-	                System.out.println("\n** exit status: " + cmd.getExitStatus());
-	            } finally {
-	                session.close();
-	            }
+//	            ssh.authPassword(USER, PASSWORD);
+//	            Runtime rt = Runtime.getRuntime();
+//	            Process vtysh = rt.exec(command, null, null);
+//	            System.out.println(IOUtils.readFully(vtysh.getInputStream()).toString());
+//	            final Session session = ssh.startSession();
+//	            try {	                
+//	            	final Command cmd = session.exec("ping -c 1 8.8.8.8");
+//	                System.out.println(IOUtils.readFully(cmd.getInputStream()).toString());
+//	                cmd.join(5, TimeUnit.SECONDS);
+//	                System.out.println("\n** exit status: " + cmd.getExitStatus());
+//	            } finally {
+//	                session.close();
+//	            }
 	        } finally {
 	            ssh.disconnect();
 	        }
@@ -69,14 +71,14 @@ public class Functions {
 	 * Get the list of the router id from the ospfd daemon
 	 * @return List of router id. They are the IP ssh will connect to or null if the command fails
 	 */
-	private List<String> getRouterList(){
+	private static List<String> getRouterList(){
 		try {
-			List<String> routers == null;
+			List<String> routers = null;
 			Runtime rt = Runtime.getRuntime();
 			while(routers == null) {
 				Process vtysh = rt.exec(VTYCOMMAND);
 				if (vtysh == null) {
-					System.err.println("Error in command string"));
+					System.err.println("Error in command string");
 					return null;
 				}
 				routers = getRouterIds(vtysh.getInputStream());
@@ -89,8 +91,8 @@ public class Functions {
 		}
 	}
 	
-	private List<String> getRouterIds(InputStream s){
-		
+	private static List<String> getRouterIds(InputStream s){
+		return null;
 	}
 }
 
