@@ -7,6 +7,7 @@ This project is based on sshj and its dependencies:
  * bcprov-jdk15on-159
  * eddsa-0.2.0
  * jzlib-1.1.3
+ * frrouting ospfd and zebrad (frrouting.org)
 
 # INSTALL
 TODO
