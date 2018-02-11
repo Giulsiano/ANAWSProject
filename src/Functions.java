@@ -16,8 +16,10 @@ import java.util.regex.Pattern;
 
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.common.IOUtils;
+import net.schmizz.sshj.connection.ConnectionException;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Session.Command;
+import net.schmizz.sshj.transport.TransportException;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 
 public class Functions {
@@ -53,34 +55,48 @@ public class Functions {
 	}
 	
 	public static void connectToRouter() throws IOException {
+			String userInput = null;
 			System.out.println("Connect to router, This is a test\n");
 			System.out.println("Getting router list");
 			List<String> routers = getRouterList();
 			if (routers == null) {
 				System.err.println("Error retrieving list of router");
 			}
-	        final SSHClient ssh = new SSHClient();
-	        // we don't need to verify the host. This is a toy tool
+			
+			// Print router list and make the user to choose
+			System.out.println("List of routers:");
+			for(String ip: routers) {
+				System.out.println(ip);
+			}
+			while(userInput == null) {
+				System.out.println("Choose the router IP of the list to which you want to connect to:");
+				userInput = System.console().readLine();
+				if (!routers.contains(userInput)) {
+					userInput = null;
+				}
+			}
+			
+			// Connect to the router
+			final SSHClient ssh = new SSHClient();
+	        // we don't need to verify the host. This is a toy tool.
 	        ssh.addHostKeyVerifier(new PromiscuousVerifier());
-	        ssh.connect("localhost");
+	        ssh.connect(userInput);
 	        try {
-//	            ssh.authPassword(USER, PASSWORD);
-//	            Runtime rt = Runtime.getRuntime();
-//	            Process vtysh = rt.exec(command, null, null);
-//	            System.out.println(IOUtils.readFully(vtysh.getInputStream()).toString());
-//	            final Session session = ssh.startSession();
-//	            try {	                
-//	            	final Command cmd = session.exec("ping -c 1 8.8.8.8");
-//	                System.out.println(IOUtils.readFully(cmd.getInputStream()).toString());
-//	                cmd.join(5, TimeUnit.SECONDS);
-//	                System.out.println("\n** exit status: " + cmd.getExitStatus());
-//	            } finally {
-//	                session.close();
-//	            }
+	            ssh.authPassword(USER, PASSWORD);
+	            final Session session = ssh.startSession();
+	            try {	                
+	            	Command cmd = session.exec("show running-config");
+	                cmd.join(5, TimeUnit.SECONDS);
+	                System.out.println("\n** exit status: " + cmd.getExitStatus());
+	            }
+	            catch (TransportException | ConnectionException e){
+	            	System.err.printf("Exception caught: %s\n%s\n", e.getClass().getName(), e.getMessage());
+	            } finally {
+	                session.close();
+	            }
 	        } finally {
 	            ssh.disconnect();
 	        }
-	        System.exit(0);
 	}
 	
 	public static void showTopology() {
@@ -98,10 +114,10 @@ public class Functions {
 					System.out.println(topology);
 				}
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				System.err.printf("Exception caught: %s\n%s\n", e.getClass().getName(), e.getMessage());
+				System.exit(1);
 			}
-		}		
+		}	
 	}
 	
 	public static void configureDF() {
