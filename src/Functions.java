@@ -1,10 +1,18 @@
-//Classe di supporto contenente l'implementazione delle 5 funzioni presentate nel menu
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.common.IOUtils;
@@ -16,6 +24,32 @@ public class Functions {
 	static final String USER = "cisco";
 	static final String PASSWORD = "cisco";
 	static final String[] VTYCOMMAND = {"/usr/bin/vtysh", "-d", "ospfd", "-c", "show ip ospf database"};
+	private static Set<String> localAddress;
+	
+    static {
+		localAddress = new HashSet<String>();
+		// get address of all interfaces of this machine
+		try {
+			Enumeration<NetworkInterface> ifaces;
+			ifaces = NetworkInterface.getNetworkInterfaces();
+			while(ifaces.hasMoreElements()) {
+				NetworkInterface currif = ifaces.nextElement();
+				Enumeration<InetAddress> addresses = currif.getInetAddresses();
+				while(addresses.hasMoreElements())
+				{
+					InetAddress addr = addresses.nextElement();
+					if (addr instanceof Inet4Address && !addr.isLoopbackAddress()) {
+						System.out.printf("iface: %s,\t\taddress: %s\n", currif.getName(), addr.getHostAddress());
+						localAddress.add(addr.getHostAddress());
+					}
+				}
+			}
+		} catch (SocketException e) {
+			// TODO Auto-generated catch block
+			System.err.printf("Error caught initializing Functions:\n%s\n%s", e.getClass().getName(), e.getMessage());
+			System.exit(1);
+		}
+	}
 	
 	public static void connectToRouter() throws IOException {
 			System.out.println("Connect to router, This is a test\n");
@@ -69,7 +103,7 @@ public class Functions {
 	
 	/**
 	 * Get the list of the router id from the ospfd daemon
-	 * @return List of router id. They are the IP ssh will connect to or null if the command fails
+	 * @return List of router id. They are the IP ssh will connect to or null if the command fails.
 	 */
 	private static List<String> getRouterList(){
 		try {
@@ -91,8 +125,30 @@ public class Functions {
 		}
 	}
 	
-	private static List<String> getRouterIds(InputStream s){
-		return null;
+	/** 
+	 * Retrieve the list of the router ip from the input stream passed
+	 * @param s InputStream from vtysh command
+	 * @return the list of IPs that belong to the routers of the network
+	 * @throws IOException
+	 */
+	private static List<String> getRouterIds(InputStream s) throws IOException{
+		String splitStartToken = "Router Link States";
+		String splitEndToken = "Net Link States";
+		Pattern pattern = Pattern.compile("^(\\d){1,3}\\.(\\d){1,3}\\.(\\d){1,3}\\.(\\d){1,3}", Pattern.MULTILINE);
+		String out = IOUtils.readFully(s).toString();
+		if (out.isEmpty() || out == null) {
+			return null;
+		}
+		String routerLinkTable = out.substring(out.indexOf(splitStartToken), out.indexOf(splitEndToken));
+		Matcher matcher = pattern.matcher(routerLinkTable);
+		List<String> routerIds = new ArrayList<String>();
+		while (matcher.find()) {
+			// Add address which doesn't belong to this machine
+			if (!localAddress.contains(matcher.group())) {				
+				routerIds.add(matcher.group());
+			}
+		}
+		return routerIds;
 	}
 }
 
