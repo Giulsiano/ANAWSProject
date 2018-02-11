@@ -18,6 +18,7 @@ import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.common.IOUtils;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Session.Command;
+import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 
 public class Functions {
 	
@@ -25,6 +26,7 @@ public class Functions {
 	static final String PASSWORD = "cisco";
 	static final String[] VTYCOMMAND = {"/usr/bin/vtysh", "-d", "ospfd", "-c", "show ip ospf database"};
 	private static Set<String> localAddress;
+	private static String topology;
 	
     static {
 		localAddress = new HashSet<String>();
@@ -39,7 +41,6 @@ public class Functions {
 				{
 					InetAddress addr = addresses.nextElement();
 					if (addr instanceof Inet4Address && !addr.isLoopbackAddress()) {
-						System.out.printf("iface: %s,\t\taddress: %s\n", currif.getName(), addr.getHostAddress());
 						localAddress.add(addr.getHostAddress());
 					}
 				}
@@ -54,12 +55,13 @@ public class Functions {
 	public static void connectToRouter() throws IOException {
 			System.out.println("Connect to router, This is a test\n");
 			System.out.println("Getting router list");
-			ArrayList<String> routers = (ArrayList<String>) getRouterList();
+			List<String> routers = getRouterList();
 			if (routers == null) {
 				System.err.println("Error retrieving list of router");
 			}
 	        final SSHClient ssh = new SSHClient();
-	        ssh.loadKnownHosts();
+	        // we don't need to verify the host. This is a toy tool
+	        ssh.addHostKeyVerifier(new PromiscuousVerifier());
 	        ssh.connect("localhost");
 	        try {
 //	            ssh.authPassword(USER, PASSWORD);
@@ -83,7 +85,23 @@ public class Functions {
 	
 	public static void showTopology() {
 		System.out.println("Show Topology, This is a test\n");
-		
+		while(topology == null || topology.isEmpty()) {
+			try {
+				Runtime rt = Runtime.getRuntime();
+				Process vtysh = rt.exec(VTYCOMMAND);
+				if (vtysh == null) {
+					System.err.println("Error in command string");
+					System.exit(1);
+				}
+				else {
+					topology = IOUtils.readFully(vtysh.getInputStream()).toString();
+					System.out.println(topology);
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}		
 	}
 	
 	public static void configureDF() {
@@ -115,7 +133,9 @@ public class Functions {
 					System.err.println("Error in command string");
 					return null;
 				}
-				routers = getRouterIds(vtysh.getInputStream());
+				else {
+					routers = getRouterIds(vtysh.getInputStream());					
+				}
 			}
 			return routers;
 		}
@@ -138,6 +158,10 @@ public class Functions {
 		String out = IOUtils.readFully(s).toString();
 		if (out.isEmpty() || out == null) {
 			return null;
+		}
+		if (topology == null || !topology.equals(out)) {
+			System.out.println("Updating topology");
+			topology = out;
 		}
 		String routerLinkTable = out.substring(out.indexOf(splitStartToken), out.indexOf(splitEndToken));
 		Matcher matcher = pattern.matcher(routerLinkTable);
