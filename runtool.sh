@@ -1,7 +1,7 @@
 #!/bin/sh
-
 DEBUG=
 DHCPPIDFILE=dhclient.pid
+PORT=8787
 case $1 in
 	"-d")
 		DEBUG="-Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=${PORT},server=y,suspend=y"
@@ -32,7 +32,7 @@ INTERFACE="tap0"
 if [ -h /sys/class/net/${INTERFACE} ]; then
 	echo "Waiting DHCP lease from interface ${INTERFACE}"
 	sudo dhclient -pf ${DHCPPIDFILE} ${INTERFACE} || { echo "DHCP Error. Check connectivity"; exit 1; }
-	if [ $? -ne 1 ]; then
+	if [ $? -ne 0 ]; then
 		exit 1
 	fi
 else
@@ -55,6 +55,6 @@ java ${DEBUG} -cp ${JAVACP} Tool
 # Clean up
 cd ../
 echo "Releasing DHCP"
-sudo dhclient -r tap0
+sudo dhclient -r ${INTERFACE}
 sudo kill -9 $( cat ${DHCPPIDFILE} )
 rm -f ${DHCPPIDFILE}
