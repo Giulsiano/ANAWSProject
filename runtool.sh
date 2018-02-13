@@ -1,5 +1,4 @@
 #!/bin/sh
-set -x
 
 DEBUG=
 DHCPPIDFILE=dhclient.pid
@@ -32,12 +31,12 @@ fi
 INTERFACE="tap0"
 if [ -h /sys/class/net/${INTERFACE} ]; then
 	echo "Waiting DHCP lease from interface ${INTERFACE}"
-	sudo dhclient -pf ${DHCPPIDFILE} tap0 || { echo "DHCP Error. Check connectivity"; exit 1; }
+	sudo dhclient -pf ${DHCPPIDFILE} ${INTERFACE} || { echo "DHCP Error. Check connectivity"; exit 1; }
 	if [ $? -ne 1 ]; then
 		exit 1
 	fi
 else
-	echo "tap0 hasn't been found in this computer. Exiting"
+	echo "${INTERFACE} hasn't been found in this computer. Exiting"
 	exit 1 
 fi
 
