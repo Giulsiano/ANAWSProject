@@ -1,6 +1,7 @@
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -15,22 +16,27 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.schmizz.sshj.SSHClient;
+import net.schmizz.sshj.common.DisconnectReason;
 import net.schmizz.sshj.common.IOUtils;
+import net.schmizz.sshj.common.LoggerFactory;
+import net.schmizz.sshj.common.StreamCopier;
 import net.schmizz.sshj.connection.ConnectionException;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Session.Command;
+import net.schmizz.sshj.connection.channel.direct.Session.Shell;
+import net.schmizz.sshj.transport.DisconnectListener;
 import net.schmizz.sshj.transport.TransportException;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 
-public class Functions {
+public class Functions{
 	
 	static final String USER = "cisco";
 	static final String PASSWORD = "cisco";
 	static final String[] VTYCOMMAND = {"/usr/bin/vtysh", "-d", "ospfd", "-c", "show ip ospf database"};
-	private static Set<String> localAddress;
-	private static String topology;
+	private Set<String> localAddress;
+	private String topology;
 	
-    static {
+    public Functions() {
 		localAddress = new HashSet<String>();
 		// get address of all interfaces of this machine
 		try {
@@ -54,7 +60,7 @@ public class Functions {
 		}
 	}
 	
-	public static void connectToRouter() throws IOException {
+	public void connectToRouter() throws IOException {
 			String userInput = null;
 			System.out.println("Connect to router, This is a test\n");
 			System.out.println("Getting router list");
@@ -84,10 +90,21 @@ public class Functions {
 	        try {
 	            ssh.authPassword(USER, PASSWORD);
 	            final Session session = ssh.startSession();
-	            try {	                
-	            	Command cmd = session.exec("show running-config");
-	                cmd.join(5, TimeUnit.SECONDS);
-	                System.out.println("\n** exit status: " + cmd.getExitStatus());
+	            session.allocateDefaultPTY();
+	            final Shell shell = session.startShell();
+	            try {
+	            	// Redirect input and output stream in order to send user's command to the router
+	                new StreamCopier(shell.getInputStream(), System.out, LoggerFactory.DEFAULT)
+	                        .bufSize(shell.getLocalMaxPacketSize())
+	                        .spawn("stdout");
+
+	                new StreamCopier(shell.getErrorStream(), System.err, LoggerFactory.DEFAULT)
+	                        .bufSize(shell.getLocalMaxPacketSize())
+	                        .spawn("stderr");
+
+	                new StreamCopier(System.in, shell.getOutputStream(), LoggerFactory.DEFAULT)
+            				.bufSize(shell.getRemoteMaxPacketSize())
+            				.copy();
 	            }
 	            catch (TransportException | ConnectionException e){
 	            	System.err.printf("Exception caught: %s\n%s\n", e.getClass().getName(), e.getMessage());
@@ -99,7 +116,10 @@ public class Functions {
 	        }
 	}
 	
-	public static void showTopology() {
+	/**
+	 * Show the LSA Database retrieved from ospfd.
+	 */
+	public void showTopology() {
 		System.out.println("Show Topology, This is a test\n");
 		while(topology == null || topology.isEmpty()) {
 			try {
@@ -120,17 +140,17 @@ public class Functions {
 		}	
 	}
 	
-	public static void configureDF() {
+	public void configureDF() {
 		System.out.println("Configure DiffServ, This is a test\n");
 		
 	}
 	
-	public static void defineNewClass() {
+	public void defineNewClass() {
 		System.out.println("Define New Class, This is a test\n");
 		
 	}
 	
-	public static void showRunningConf() {
+	public void showRunningConf() {
 		System.out.println("Show running configurations, This is a test\n");
 
 	}
@@ -139,7 +159,7 @@ public class Functions {
 	 * Get the list of the router id from the ospfd daemon
 	 * @return List of router id. They are the IP ssh will connect to or null if the command fails.
 	 */
-	private static List<String> getRouterList(){
+	private List<String> getRouterList(){
 		try {
 			List<String> routers = null;
 			Runtime rt = Runtime.getRuntime();
@@ -167,7 +187,7 @@ public class Functions {
 	 * @return the list of IPs that belong to the routers of the network
 	 * @throws IOException
 	 */
-	private static List<String> getRouterIds(InputStream s) throws IOException{
+	private List<String> getRouterIds(InputStream s) throws IOException{
 		String splitStartToken = "Router Link States";
 		String splitEndToken = "Net Link States";
 		Pattern pattern = Pattern.compile("^(\\d){1,3}\\.(\\d){1,3}\\.(\\d){1,3}\\.(\\d){1,3}", Pattern.MULTILINE);
@@ -189,6 +209,11 @@ public class Functions {
 			}
 		}
 		return routerIds;
+	}
+
+	@Override
+	public void notifyDisconnect(DisconnectReason reason, String message) {
+		System.out.printf("Disconnected - %s", reason);
 	}
 }
 

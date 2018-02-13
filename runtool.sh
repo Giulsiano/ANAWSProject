@@ -9,6 +9,7 @@ case $1 in
 	*)
 		echo "Usage: ./runtool.sh [ -d]"
 		echo "		-d 	enable jvm options for debugging the tool"
+		;;
 esac 
 
 # Check runtime dependencies
