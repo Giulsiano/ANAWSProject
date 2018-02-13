@@ -1,6 +1,17 @@
 #!/bin/sh
 set -x
 
+DEBUG=
+DHCPPIDFILE=dhclient.pid
+case $1 in
+	"-d")
+		DEBUG="-Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=${PORT},server=y,suspend=y"
+		;;
+	*)
+		echo "Usage: ./runtool.sh [ -d]"
+		echo "		-d 	enable jvm options for debugging the tool"
+esac 
+
 # Check runtime dependencies
 if [ ! -d /etc/frr  -a ! -e /bin/vtysh ]; then
 	echo "Frrouting daemon seems to be not installed. Exiting"
@@ -21,8 +32,8 @@ fi
 INTERFACE="tap0"
 if [ -h /sys/class/net/${INTERFACE} ]; then
 	echo "Waiting DHCP lease from interface ${INTERFACE}"
-	sudo dhclient tap0 || { echo "DHCP Error. Check connectivity"; exit 1; }
-	if [ $? == 1 ]; then
+	sudo dhclient -pf ${DHCPPIDFILE} tap0 || { echo "DHCP Error. Check connectivity"; exit 1; }
+	if [ $? -ne 1 ]; then
 		exit 1
 	fi
 else
@@ -40,4 +51,12 @@ JAVACP=${JAVACP}${LIBDIR}/sshj-0.23.0.jar:
 JAVACP=${JAVACP}.
 
 cd bin/
-java -cp ${JAVACP} Tool
+java ${DEBUG} -cp ${JAVACP} Tool
+
+# Clean up
+cd ../
+echo "Releasing DHCP"
+sudo dhclient -r tap0
+rm -f ${DHCPPIDFILE}
+
+
