@@ -57,6 +57,5 @@ java ${DEBUG} -cp ${JAVACP} Tool
 cd ../
 echo "Releasing DHCP"
 sudo dhclient -r tap0
+sudo kill -9 $( cat ${DHCPPIDFILE} )
 rm -f ${DHCPPIDFILE}
-
-
