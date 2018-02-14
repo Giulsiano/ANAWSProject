@@ -3,6 +3,8 @@ DEBUG=
 DHCPPIDFILE=dhclient.pid
 PORT=8787
 case $1 in
+	"")
+		;;
 	"-d")
 		DEBUG="-Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=${PORT},server=y,suspend=y"
 		;;
