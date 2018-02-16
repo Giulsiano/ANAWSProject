@@ -89,7 +89,7 @@ public class Functions{
             final Session session = ssh.startSession();
             session.allocateDefaultPTY();
             final Shell shell = session.startShell();
-            redirect(shell, session);
+            redirect(shell, session, false);
             
         } finally {
             ssh.disconnect();
@@ -157,20 +157,23 @@ public class Functions{
 				ssh.authPassword(USER, PASSWORD);
 				Session session = ssh.startSession(); 
 				Shell shell = session.startShell();
+				redirect(shell, session, true);
 			    Expect expect = new ExpectBuilder()
 			                .withOutput(shell.getOutputStream())
 			                .withInputs(shell.getInputStream(), shell.getErrorStream())
-			                .withEchoInput(System.out)
-			                .withEchoOutput(System.err)
-			                .withExceptionOnFailure()
 			                .build();
 			    try {
-					System.out.println("---> Executing the command...");
+					//System.out.println("---> Executing the command...");
 					expect.send("enable");
-					//expect.expect(contains("password:"));
+					expect.sendLine();
 					expect.send("cisco");
-					expect.send("show running-config");
+					expect.sendLine();
+					expect.send("terminal length 0");
+					expect.sendLine();
+				    expect.send("show running-config");
+				    expect.sendLine();
 			    } finally {
+			    	System.out.println("\n");
 				    expect.close();
 					session.close();
 				} 
@@ -269,26 +272,33 @@ public class Functions{
 	 * @param ses
 	 * @throws IOException
 	 */
-	private void redirect(Shell sh, Session ses) throws IOException {
-		try {
-        	
+	private void redirect(Shell sh, Session ses, boolean onlyOutput) throws IOException {
+		if(!onlyOutput) {
+			try {
+				new StreamCopier(sh.getInputStream(), System.out, LoggerFactory.DEFAULT)
+	            .bufSize(sh.getLocalMaxPacketSize())
+	            .spawn("stdout");
+
+				new StreamCopier(sh.getErrorStream(), System.err, LoggerFactory.DEFAULT)
+	            	.bufSize(sh.getLocalMaxPacketSize())
+	            	.spawn("stderr");
+				new StreamCopier(System.in, sh.getOutputStream(), LoggerFactory.DEFAULT)
+					.bufSize(sh.getRemoteMaxPacketSize())
+					.copy();
+
+	        }
+	        catch (TransportException | ConnectionException e){
+	        	System.err.printf("Exception caught: %s\n%s\n", e.getClass().getName(), e.getMessage());
+	        }finally {
+	            ses.close();
+	        }
+		}
+		else {
 			new StreamCopier(sh.getInputStream(), System.out, LoggerFactory.DEFAULT)
             .bufSize(sh.getLocalMaxPacketSize())
             .spawn("stdout");
-
-			new StreamCopier(sh.getErrorStream(), System.err, LoggerFactory.DEFAULT)
-            	.bufSize(sh.getLocalMaxPacketSize())
-            	.spawn("stderr");
-			new StreamCopier(System.in, sh.getOutputStream(), LoggerFactory.DEFAULT)
-				.bufSize(sh.getRemoteMaxPacketSize())
-				.copy();
-			
-        }
-        catch (TransportException | ConnectionException e){
-        	System.err.printf("Exception caught: %s\n%s\n", e.getClass().getName(), e.getMessage());
-        }finally {
-            ses.close();
-        }
+		}
+		
 	}
 }
 
