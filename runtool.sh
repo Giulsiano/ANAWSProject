@@ -31,15 +31,52 @@ if [ ! -e /etc/frr/ospfd.conf ]; then
 	fi
 fi
 
-INTERFACE="tap0"
-if [ -h /sys/class/net/${INTERFACE} ]; then
-	echo "Waiting DHCP lease from interface ${INTERFACE}"
-	sudo dhclient -pf ${DHCPPIDFILE} ${INTERFACE} || { echo "DHCP Error. Check connectivity"; exit 1; }
+INTERFACE0="tap0"
+if [ -h /sys/class/net/${INTERFACE0} ]; then
+	echo "Waiting DHCP lease from interface ${INTERFACE0}"
+	sudo dhclient -pf ${DHCPPIDFILE} ${INTERFACE0} || { echo "DHCP Error. Check connectivity"; exit 1; }
 	if [ $? -ne 0 ]; then
 		exit 1
 	fi
 else
-	echo "${INTERFACE} hasn't been found in this computer. Exiting"
+	echo "${INTERFACE0} hasn't been found in this computer. Exiting"
+	exit 1 
+fi
+
+
+INTERFACE1="tap1"
+if [ -h /sys/class/net/${INTERFACE1} ]; then
+	echo "Waiting DHCP lease from interface ${INTERFACE1}"
+	sudo dhclient -pf ${DHCPPIDFILE} ${INTERFACE1} || { echo "DHCP Error. Check connectivity"; exit 1; }
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
+else
+	echo "${INTERFACE1} hasn't been found in this computer. Exiting"
+	exit 1 
+fi
+
+INTERFACE2="tap2"
+if [ -h /sys/class/net/${INTERFACE2} ]; then
+	echo "Waiting DHCP lease from interface ${INTERFACE2}"
+	sudo dhclient -pf ${DHCPPIDFILE} ${INTERFACE2} || { echo "DHCP Error. Check connectivity"; exit 1; }
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
+else
+	echo "${INTERFACE2} hasn't been found in this computer. Exiting"
+	exit 1 
+fi
+
+INTERFACE3="tap3"
+if [ -h /sys/class/net/${INTERFACE3} ]; then
+	echo "Waiting DHCP lease from interface ${INTERFACE3}"
+	sudo dhclient -pf ${DHCPPIDFILE} ${INTERFACE3} || { echo "DHCP Error. Check connectivity"; exit 1; }
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
+else
+	echo "${INTERFACE3} hasn't been found in this computer. Exiting"
 	exit 1 
 fi
 
@@ -58,6 +95,9 @@ java ${DEBUG} -cp ${JAVACP} Tool
 # Clean up
 cd ../
 echo "Releasing DHCP"
-sudo dhclient -r ${INTERFACE}
+sudo dhclient -r ${INTERFACE0}
+sudo dhclient -r ${INTERFACE1}
+sudo dhclient -r ${INTERFACE2}
+sudo dhclient -r ${INTERFACE2}
 sudo kill -9 $( cat ${DHCPPIDFILE} )
 rm -f ${DHCPPIDFILE}

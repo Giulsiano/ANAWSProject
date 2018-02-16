@@ -62,7 +62,7 @@ public class Functions{
 	
 	public void connectToRouter() throws IOException {
 		String userInput = null;
-		System.out.println("Connect to router, This is a test\n");
+		//System.out.println("Connect to router, This is a test\n");
 		System.out.println("Getting router list");
 		List<String> routers = getRouterList();
 		if (routers == null) {
