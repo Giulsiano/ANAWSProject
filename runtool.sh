@@ -98,6 +98,6 @@ echo "Releasing DHCP"
 sudo dhclient -r ${INTERFACE0}
 sudo dhclient -r ${INTERFACE1}
 sudo dhclient -r ${INTERFACE2}
-sudo dhclient -r ${INTERFACE2}
+sudo dhclient -r ${INTERFACE3}
 sudo kill -9 $( cat ${DHCPPIDFILE} )
 rm -f ${DHCPPIDFILE}
