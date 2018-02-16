@@ -92,7 +92,7 @@ JAVACP=${JAVACP}.
 cd bin/
 java ${DEBUG} -cp ${JAVACP} Tool
 
-# Clean up for all interface
+# Clean up 
 cd ../
 echo "Releasing DHCP"
 sudo dhclient -r ${INTERFACE0}
