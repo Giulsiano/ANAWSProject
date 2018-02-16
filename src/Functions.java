@@ -26,15 +26,21 @@ import net.schmizz.sshj.connection.channel.direct.Session.Command;
 import net.schmizz.sshj.connection.channel.direct.Session.Shell;
 import net.schmizz.sshj.transport.TransportException;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
+import net.sf.expectit.Expect;
+import net.sf.expectit.ExpectBuilder;
 
 public class Functions{
 	
+	public String userInput = null;
+	public List<String> routers;
 	static final String USER = "cisco";
 	static final String PASSWORD = "cisco";
 	static final String[] VTYCOMMAND = {"/usr/bin/vtysh", "-d", "ospfd", "-c", "show ip ospf database"};
 	private Set<String> localAddress;
 	private String topology;
 	private Runtime rt;
+	
+	
     public Functions() {
     	rt = Runtime.getRuntime();
 		localAddress = new HashSet<String>();
@@ -59,21 +65,12 @@ public class Functions{
 			System.exit(1);
 		}
 	}
-	
+
+//*******************************************************************************************************************************************    
+    
 	public void connectToRouter() throws IOException {
-		String userInput = null;
-		//System.out.println("Connect to router, This is a test\n");
-		System.out.println("Getting router list");
-		List<String> routers = getRouterList();
-		if (routers == null) {
-			System.err.println("Error retrieving list of router");
-		}
-		
-		// Print router list and make the user to choose
-		System.out.println("List of routers:");
-		for(String ip: routers) {
-			System.out.println(ip);
-		}
+				
+		printRouterList();
 		while(userInput == null) {
 			System.out.println("Choose the router IP of the list to which you want to connect to:");
 			userInput = System.console().readLine();
@@ -92,29 +89,14 @@ public class Functions{
             final Session session = ssh.startSession();
             session.allocateDefaultPTY();
             final Shell shell = session.startShell();
-            try {
-            	// Redirect input and output stream in order to send user's command to the router
-                new StreamCopier(shell.getInputStream(), System.out, LoggerFactory.DEFAULT)
-                        .bufSize(shell.getLocalMaxPacketSize())
-                        .spawn("stdout");
-
-                new StreamCopier(shell.getErrorStream(), System.err, LoggerFactory.DEFAULT)
-                        .bufSize(shell.getLocalMaxPacketSize())
-                        .spawn("stderr");
-                new StreamCopier(System.in, shell.getOutputStream(), LoggerFactory.DEFAULT)
-        				.bufSize(shell.getRemoteMaxPacketSize())
-        				.copy();
-                shell.close();
-            }
-            catch (TransportException | ConnectionException e){
-            	System.err.printf("Exception caught: %s\n%s\n", e.getClass().getName(), e.getMessage());
-            } finally {
-                session.close();
-            }
+            redirect(shell, session);
+            
         } finally {
             ssh.disconnect();
         }
 	}
+	
+//******************************************************************************************************************************************* 
 	
 	/**
 	 * Show the LSA Database retrieved from ospfd.
@@ -139,47 +121,71 @@ public class Functions{
 		}	
 	}
 	
+//******************************************************************************************************************************************* 
+	
 	public void configureDF() {
 		System.out.println("Configure DiffServ, This is a test\n");
 		
 	}
 	
+//******************************************************************************************************************************************* 	
+	
 	public void defineNewClass() {
 		System.out.println("Define New Class, This is a test\n");
 		
 	}
+
+//******************************************************************************************************************************************* 	
 	
 	public void showRunningConf() {
-		System.out.println("Show running configurations, This is a test\n");
+
 		String command = "show running-config";
-		Map<String, String> routerConfigs = new HashMap<String, String>();
+		printRouterList();
+		while(userInput == null) {
+			System.out.println("Choose the router IP of the list to which you want the running-conf:");
+			userInput = System.console().readLine();
+			if (!routers.contains(userInput)) {
+				userInput = null;
+			}
+		}
 		try {
-			List<String> routers = getRouterIds(this.rt.exec(VTYCOMMAND).getInputStream());
-			String config = null;
-			for (String ip : routers) {
-				SSHClient ssh = new SSHClient();
-				ssh.addHostKeyVerifier(new PromiscuousVerifier());
-				try {
-					ssh.authPassword(USER, PASSWORD);
-					ssh.connect(ip);
-					Session session = ssh.startSession(); 
-					try {
-						Command cmd = session.exec(command);
-						cmd.join();
-					}
-					finally {
-						session.close();
-					}
-				}
-				finally {
-					ssh.disconnect();
-				}
+
+			SSHClient ssh = new SSHClient();
+			ssh.addHostKeyVerifier(new PromiscuousVerifier());
+			try {
+				ssh.connect(userInput);
+				ssh.authPassword(USER, PASSWORD);
+				Session session = ssh.startSession(); 
+				Shell shell = session.startShell();
+			    Expect expect = new ExpectBuilder()
+			                .withOutput(shell.getOutputStream())
+			                .withInputs(shell.getInputStream(), shell.getErrorStream())
+			                .withEchoInput(System.out)
+			                .withEchoOutput(System.err)
+			                .withExceptionOnFailure()
+			                .build();
+			    try {
+					System.out.println("---> Executing the command...");
+					expect.send("enable");
+					//expect.expect(contains("password:"));
+					expect.send("cisco");
+					expect.send("show running-config");
+			    } finally {
+				    expect.close();
+					session.close();
+				} 
+				
+			}
+			finally {
+				ssh.disconnect();
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
+	
+//******************************************************************************************************************************************* 
 	
 	/**
 	 * Get the list of the router id from the ospfd daemon
@@ -206,6 +212,8 @@ public class Functions{
 			return null;
 		}
 	}
+	
+//******************************************************************************************************************************************* 
 	
 	/** 
 	 * Retrieve the list of the router ip from the input stream passed
@@ -236,5 +244,53 @@ public class Functions{
 		}
 		return routerIds;
 	}
+	
+//******************************************************************************************************************************************* 	
+	
+	private void printRouterList() {
+		System.out.println("Getting router list");
+		routers = getRouterList();
+		if (routers == null) {
+			System.err.println("Error retrieving list of router");
+		}
+		
+		// Print router list and make the user to choose
+		System.out.println("List of routers:");
+		for(String ip: routers) {
+			System.out.println(ip);
+		}
+	}
+	
+//******************************************************************************************************************************************* 	
+	
+	/**
+	 *  Redirect output stream in order to send user's command to the router
+	 * @param sh
+	 * @param ses
+	 * @throws IOException
+	 */
+	private void redirect(Shell sh, Session ses) throws IOException {
+		try {
+        	
+			new StreamCopier(sh.getInputStream(), System.out, LoggerFactory.DEFAULT)
+            .bufSize(sh.getLocalMaxPacketSize())
+            .spawn("stdout");
+
+			new StreamCopier(sh.getErrorStream(), System.err, LoggerFactory.DEFAULT)
+            	.bufSize(sh.getLocalMaxPacketSize())
+            	.spawn("stderr");
+			new StreamCopier(System.in, sh.getOutputStream(), LoggerFactory.DEFAULT)
+				.bufSize(sh.getRemoteMaxPacketSize())
+				.copy();
+			
+        }
+        catch (TransportException | ConnectionException e){
+        	System.err.printf("Exception caught: %s\n%s\n", e.getClass().getName(), e.getMessage());
+        }finally {
+            ses.close();
+        }
+	}
 }
+
+
 
