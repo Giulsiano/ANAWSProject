@@ -21,7 +21,7 @@ public class Tool {
 				+ "4. Define new Class\n"
 				+ "5. Show router configurations\n"
 				+ "-------------------------------------------------------------------------\n");
-		System.out.println("Digit .help for manual, .exit to close\n");
+		System.out.println("Type .help for manual, .exit to close\n");
 		waitForCommand();
 	}
 	

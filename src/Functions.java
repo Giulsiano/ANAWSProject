@@ -124,8 +124,36 @@ public class Functions{
 //******************************************************************************************************************************************* 
 	
 	public void configureDF() {
-		System.out.println("Configure DiffServ, This is a test\n");
-		
+		System.out.println("Startinf DiffServ configuration wizard...\n");
+		System.out.println("Type:\n"
+				+ "<all> to configure DiffServ on every routers in the net\n"
+				+ "<one> to configure DiffServ on a single router\n");
+		String input = System.console().readLine();
+		if(input.equals("all")) {
+			System.out.println("Do you want to use standard classes(std) or define new one(new)?\n");
+			input = System.console().readLine();
+			if(input.equals("std")) {
+				confStdDF();
+			}
+			else if (input.equals("new")) {
+				defineNewClass();
+			}
+			else System.out.println("Command not found\n");
+		}
+		else if(input.equals("one")) {
+			System.out.println("Do you want to use standard classes(std) or define new one(new)?\n");
+			input = System.console().readLine();
+			if(input.equals("std")) {
+				confStdDF();
+			}
+			else if (input.equals("new")) {
+				defineNewClass();
+			}
+			else System.out.println("Command not found\n");
+		}
+		else {
+			System.out.println("Command not found\n");
+		}
 	}
 	
 //******************************************************************************************************************************************* 	
@@ -139,7 +167,6 @@ public class Functions{
 	
 	public void showRunningConf() {
 
-		String command = "show running-config";
 		printRouterList();
 		while(userInput == null) {
 			System.out.println("Choose the router IP of the list to which you want the running-conf:");
@@ -173,7 +200,6 @@ public class Functions{
 				    expect.send("show running-config");
 				    expect.sendLine();
 			    } finally {
-			    	System.out.println("\n");
 				    expect.close();
 					session.close();
 				} 
@@ -298,6 +324,12 @@ public class Functions{
             .bufSize(sh.getLocalMaxPacketSize())
             .spawn("stdout");
 		}
+		
+	}
+	
+//******************************************************************************************************************************************* 		
+	
+	private void confStdDF() {
 		
 	}
 }
