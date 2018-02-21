@@ -1,7 +1,10 @@
 
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -36,10 +39,10 @@ public class Functions{
 	static final String USER = "cisco";
 	static final String PASSWORD = "cisco";
 	static final String[] VTYCOMMAND = {"/usr/bin/vtysh", "-d", "ospfd", "-c", "show ip ospf database"};
+	static final String CLASSDIR = "./classes/";
 	private Set<String> localAddress;
 	private String topology;
 	private Runtime rt;
-	
 	
     public Functions() {
     	rt = Runtime.getRuntime();
@@ -160,7 +163,33 @@ public class Functions{
 	
 	public void defineNewClass() {
 		System.out.println("Define New Class, This is a test\n");
-		
+		System.out.println("Define new class wizard...\n");
+		System.out.printf("Enter name of the new class: ");
+		String filename = System.console().readLine();
+		try {
+			PrintWriter classFile = new PrintWriter(new File(CLASSDIR + filename));
+			try {				
+				System.out.println("Commands written here must be valid cisco IOS command.\n"
+						+ "Example to define a new class:\n\n"
+						+ "! define new classification, all hosts matching 192.168.1.* are classified\n"
+						+ "access-list 1 permit 192.168.1.0 0.0.0.255\n"
+						+ "class map match-all VOIP\n"
+						+ " match access-group 1\n\n"
+						+ "Write line by line your class definition below. End with .exit\n"
+						);
+				String input = null;
+				do {
+					input = System.console().readLine();
+					classFile.println(input);
+				}while(!input.equals(".exit"));
+	
+			} finally {
+				classFile.close();
+			}
+		} catch (FileNotFoundException e) {
+			System.err.println("Cannot create class file on the filesystem");
+			System.exit(1);
+		}
 	}
 
 //******************************************************************************************************************************************* 	
@@ -203,7 +232,6 @@ public class Functions{
 				    expect.close();
 					session.close();
 				} 
-				
 			}
 			finally {
 				ssh.disconnect();
@@ -281,6 +309,7 @@ public class Functions{
 		routers = getRouterList();
 		if (routers == null) {
 			System.err.println("Error retrieving list of router");
+			return;
 		}
 		
 		// Print router list and make the user to choose
@@ -304,14 +333,13 @@ public class Functions{
 				new StreamCopier(sh.getInputStream(), System.out, LoggerFactory.DEFAULT)
 	            .bufSize(sh.getLocalMaxPacketSize())
 	            .spawn("stdout");
-
 				new StreamCopier(sh.getErrorStream(), System.err, LoggerFactory.DEFAULT)
 	            	.bufSize(sh.getLocalMaxPacketSize())
 	            	.spawn("stderr");
 				new StreamCopier(System.in, sh.getOutputStream(), LoggerFactory.DEFAULT)
 					.bufSize(sh.getRemoteMaxPacketSize())
 					.copy();
-
+				System.out.println("\n");
 	        }
 	        catch (TransportException | ConnectionException e){
 	        	System.err.printf("Exception caught: %s\n%s\n", e.getClass().getName(), e.getMessage());
