@@ -1,5 +1,4 @@
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -11,10 +10,8 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,10 +19,10 @@ import java.util.regex.Pattern;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.common.IOUtils;
 import net.schmizz.sshj.common.LoggerFactory;
+import net.schmizz.sshj.common.SSHException;
 import net.schmizz.sshj.common.StreamCopier;
 import net.schmizz.sshj.connection.ConnectionException;
 import net.schmizz.sshj.connection.channel.direct.Session;
-import net.schmizz.sshj.connection.channel.direct.Session.Command;
 import net.schmizz.sshj.connection.channel.direct.Session.Shell;
 import net.schmizz.sshj.transport.TransportException;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
@@ -43,6 +40,27 @@ public class Functions{
 	private Set<String> localAddress;
 	private String topology;
 	private Runtime rt;
+	
+	/**
+	 * Enter the root terminal of the Cisco device
+	 * @param s The sshj session object of a previously connected sshj connection
+	 * @return the Expect object where the command enable was sent 
+	 * @throws SSHException
+	 * @throws IOException
+	 */
+	private Expect enableRoot(Session s) throws SSHException, IOException {
+		s.allocateDefaultPTY();
+		Shell sh = s.startShell();
+		Expect expect = new ExpectBuilder()
+                .withOutput(sh.getOutputStream())
+                .withInputs(sh.getInputStream(), sh.getErrorStream())
+                .build();
+		expect.send("enable");
+		expect.sendLine();
+		expect.send("cisco");
+		expect.sendLine();
+		return expect;
+	}
 	
     public Functions() {
     	rt = Runtime.getRuntime();
