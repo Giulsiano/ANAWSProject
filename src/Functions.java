@@ -157,7 +157,7 @@ public class Functions{
 				confStdDF();
 			}
 			else if (input.equals("new")) {
-				defineNewClass();
+				defineNewClass(false);
 			}
 			else System.out.println("Command not found\n");
 		}
@@ -168,7 +168,7 @@ public class Functions{
 				confStdDF();
 			}
 			else if (input.equals("new")) {
-				defineNewClass();
+				defineNewClass(false);
 			}
 			else System.out.println("Command not found\n");
 		}
@@ -179,11 +179,11 @@ public class Functions{
 	
 //******************************************************************************************************************************************* 	
 	
-	public void defineNewClass() {
-		System.out.println("Define New Class, This is a test\n");
-		System.out.println("Define new class wizard...\n");
+	public void defineNewClass(boolean calledByFunction) {
+		System.out.println("entering defineNewClass\n");
 		System.out.printf("Enter name of the new class: ");
 		String filename = System.console().readLine();
+		int resp = printDefNewClassWizardMenu();
 		try {
 			PrintWriter classFile = new PrintWriter(new File(CLASSDIR + filename));
 			try {				
@@ -209,6 +209,18 @@ public class Functions{
 			System.exit(1);
 		}
 	}
+	
+	private int printDefNewClassWizardMenu() {
+		System.out.println("Commands written here must be valid cisco IOS command.\n"
+				+ "Example to define a new class:\n\n"
+				+ "! define new classification, all hosts matching 192.168.1.* are classified\n"
+				+ "access-list 1 permit 192.168.1.0 0.0.0.255\n"
+				+ "class map match-all VOIP\n"
+				+ " match access-group 1\n\n"
+				+ "Write line by line your class definition below. End with .exit\n"
+				);
+		return "";
+	}
 
 //******************************************************************************************************************************************* 	
 	
@@ -223,7 +235,6 @@ public class Functions{
 			}
 		}
 		try {
-
 			SSHClient ssh = new SSHClient();
 			ssh.addHostKeyVerifier(new PromiscuousVerifier());
 			try {
