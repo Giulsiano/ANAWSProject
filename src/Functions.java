@@ -499,6 +499,7 @@ public class Functions{
 		for(String ip: routers) {
 			System.out.println(ip);
 		}
+		
 		System.out.println("");
 	}
 	
