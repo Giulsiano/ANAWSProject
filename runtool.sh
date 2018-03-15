@@ -31,6 +31,14 @@ if [ ! -e /etc/frr/ospfd.conf ]; then
 	fi
 fi
 
+# Check ospfd is running
+if $(pgrep ospfd)
+then
+    echo "ospfd is running"
+else
+    echo "ospfd is not running. Please run the service before starting the tool."
+fi
+
 INTERFACE0="tap0"
 if [ -h /sys/class/net/${INTERFACE0} ]; then
 	echo "Waiting DHCP lease from interface ${INTERFACE0}"
