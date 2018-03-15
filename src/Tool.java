@@ -26,8 +26,11 @@ public class Tool {
 	}
 	
 	public void waitForCommand() throws IOException {
-		input = System.console().readLine();
-		whatCommand(input);
+		try {
+			input = System.console().readLine();
+			whatCommand(input);			
+		}catch (NumberFormatException e) {
+		}
 	}
 	
 	public void whatCommand(String in) throws IOException {
@@ -38,6 +41,7 @@ public class Tool {
 		
 		if(in.startsWith(".exit"))
 			System.exit(0);
+		
 		
 		int cmd = Integer.parseInt(in);
 		
@@ -55,7 +59,7 @@ public class Tool {
 				break;
 			
 			case 4:
-				func.defineNewClass();
+				func.defineNewClass(false);
 				break;
 			
 			case 5:

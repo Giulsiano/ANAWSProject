@@ -33,6 +33,7 @@ public class Functions{
 	
 	public String userInput = null;
 	public List<String> routers;
+	public File[] fileList;
 	static final String USER = "cisco";
 	static final String PASSWORD = "cisco";
 	static final String[] VTYCOMMAND = {"/usr/bin/vtysh", "-d", "ospfd", "-c", "show ip ospf database"};
@@ -144,43 +145,107 @@ public class Functions{
 	
 //******************************************************************************************************************************************* 
 	
-	public void configureDF() {
-		System.out.println("Startinf DiffServ configuration wizard...\n");
-		System.out.println("Type:\n"
-				+ "<all> to configure DiffServ on every routers in the net\n"
-				+ "<one> to configure DiffServ on a single router\n");
-		String input = System.console().readLine();
-		if(input.equals("all")) {
-			System.out.println("Do you want to use standard classes(std) or define new one(new)?\n");
-			input = System.console().readLine();
-			if(input.equals("std")) {
-				confStdDF();
-			}
-			else if (input.equals("new")) {
-				defineNewClass();
-			}
-			else System.out.println("Command not found\n");
+	public void configureDF() throws IOException {
+		String input1 = null;
+		String input2 = null;
+		String addr = null;
+		String filepos = null;
+		int pos = 0;
+		System.out.println("Starting DiffServ Configuratin wizard...\n");
+		printAllClasses();
+		while(input1 == null) {
+			System.out.print("Do you want to use standard (std) or new classes(new)? ");
+			input1 = System.console().readLine();
+			if(!input1.equals("std") && !input1.equals("new"))
+				input1 = null;
 		}
-		else if(input.equals("one")) {
-			System.out.println("Do you want to use standard classes(std) or define new one(new)?\n");
-			input = System.console().readLine();
-			if(input.equals("std")) {
-				confStdDF();
-			}
-			else if (input.equals("new")) {
-				defineNewClass();
-			}
-			else System.out.println("Command not found\n");
+		while(input2 == null) {
+			System.out.println("Type:\n"
+					+ "<all> to configure DiffServ on every routers in the net\n"
+					+ "<one> to configure DiffServ on a single router\n");
+			input2 = System.console().readLine();
+			if(!input2.equals("one") && !input2.equals("all"))
+				input2 = null;
 		}
-		else {
-			System.out.println("Command not found\n");
+		
+       //Checking input1 and input2 content
+		
+		if(input1.equals("std") && input2.equals("one")) {
+			printRouterList();
+			while(addr == null) {
+				System.out.print("Choose the router: ");
+				addr = System.console().readLine();
+				if(!routers.contains(addr)) 
+					addr = null;
+			}
+			confStdDF(addr);
+		}
+		else if (input1.equals("std") && input2.equals("all")) {
+			System.out.println("\n" + "Getting router list");
+			routers = getRouterList();
+			if (routers == null) {
+				System.err.println("Error retrieving list of router");
+				return;
+			}
+			
+			for(String ip: routers) {
+				confStdDF(ip);
+			}
+			
+		}
+		else if (input1.equals("new") && input2.equals("one")) {
+			printRouterList();
+			while(addr == null) {
+				System.out.print("Choose the router: ");
+				addr = System.console().readLine();
+				if(!routers.contains(addr)) 
+					addr = null;
+			}
+		
+			printNewClasses();
+			while(filepos == null) {
+				System.out.print("Waiting for a choise: ");
+				filepos = System.console().readLine();
+				pos = Integer.parseInt(filepos);
+				if(pos > fileList.length-1)
+					filepos = null;
+			}
+			if(filepos.equals("new")) 
+				defineNewClass(true);
+			else 
+				applyNewClass(pos, addr);
+			
+		}
+		else if (input1.equals("new") && input2.equals("all")) {
+			printNewClasses();
+			while(filepos == null) {
+				System.out.print("Waiting for a choise: ");
+				filepos = System.console().readLine();
+				pos = Integer.parseInt(filepos);
+				if(pos > fileList.length-1)
+					filepos = null;
+			}
+			if(filepos.equals("new")) 
+				defineNewClass(true);
+			else {
+				System.out.println("\n" + "Getting router list");
+				routers = getRouterList();
+				if (routers == null) {
+					System.err.println("Error retrieving list of router");
+					return;
+				}
+
+				for(String ip: routers) 
+					applyNewClass(pos, ip);
+			}
+			
+			
 		}
 	}
 	
 //******************************************************************************************************************************************* 	
 	
-	public void defineNewClass() {
-		System.out.println("Define New Class, This is a test\n");
+	public void defineNewClass(boolean fromConfDF) {
 		System.out.println("Define new class wizard...\n");
 		System.out.printf("Enter name of the new class: ");
 		String filename = System.console().readLine();
@@ -237,7 +302,7 @@ public class Functions{
 			                .withInputs(shell.getInputStream(), shell.getErrorStream())
 			                .build();
 			    try {
-					//System.out.println("---> Executing the command...");
+					//System.out.println("---> Executing the command...");	
 					expect.send("enable");
 					expect.sendLine();
 					expect.send("cisco");
@@ -335,6 +400,7 @@ public class Functions{
 		for(String ip: routers) {
 			System.out.println(ip);
 		}
+		System.out.println("");
 	}
 	
 //******************************************************************************************************************************************* 	
@@ -373,12 +439,53 @@ public class Functions{
 		
 	}
 	
-//******************************************************************************************************************************************* 		
+//*******************************************************************************************************************************************
 	
-	private void confStdDF() {
+	public void printNewClasses() {
+		System.out.println("\n" +"List of available classes:\n");
+		File curDir = new File(CLASSDIR);
+		fileList = curDir.listFiles();
+		for(int i = 0; i<fileList.length; i++) {
+			System.out.println(i + ": " + fileList[i].getName());
+		}
+		System.out.println("new: create new one\n");
+	}
+	
+	public void printAllClasses() {
+		System.out.println("STANDARD CLASSES:\n"
+				+ "-VoIP\n"
+				+ "-Video\n"
+				+ "-Web");
+		System.out.println("ADMIN DEFINED CLASSES:");
+		File curDir = new File(CLASSDIR);
+		fileList = curDir.listFiles();
+		for(int i = 0; i<fileList.length; i++) {
+			System.out.println("-"+fileList[i].getName());
+		}
+	}
+	
+//*******************************************************************************************************************************************	
+	
+	public void applyNewClass(int position, String ip) {
+		System.out.println("Applying new class TEST");
+	}
+	
+//*******************************************************************************************************************************************
+	
+	private void confStdDF(String ip) {
 		
 	}
+
+//*******************************************************************************************************************************************
+
+	
+	private void ApplyNewClass(String ip, String filename) {
+		
+	}
+	
 }
+
+
 
 
 
