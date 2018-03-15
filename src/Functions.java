@@ -1,7 +1,8 @@
 
-
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -116,8 +117,8 @@ public class Functions{
 
 //*******************************************************************************************************************************************    
     
-	public void connectToRouter() throws IOException {
-				
+    public void connectToRouter() throws IOException {
+		
 		printRouterList();
 		while(userInput == null) {
 			System.out.println("Choose the router IP of the list to which you want to connect to:");
@@ -234,10 +235,10 @@ public class Functions{
 				if(pos > fileList.length-1)
 					filepos = null;
 			}
-			if(filepos.equals("new")) 
+			/*if(filepos.equals("new")) 
 				defineNewClass(true, addr);
-			else 
-				applyNewClass(pos, addr);
+			else */
+				applyNewClass(nameFromPosition(pos), addr);
 			
 		}
 		else if (input1.equals("new") && input2.equals("all")) {
@@ -249,9 +250,9 @@ public class Functions{
 				if(pos > fileList.length-1)
 					filepos = null;
 			}
-			if(filepos.equals("new")) 
+			/*if(filepos.equals("new")) 
 				defineNewClass(true, addr);
-			else {
+			else {*/
 				System.out.println("\n" + "Getting router list");
 				routers = getRouterList();
 				if (routers == null) {
@@ -260,8 +261,8 @@ public class Functions{
 				}
 
 				for(String ip: routers) 
-					applyNewClass(pos, ip);
-			}
+					applyNewClass(nameFromPosition(pos), ip);
+			//}
 			
 			
 		}
@@ -546,7 +547,7 @@ public class Functions{
 		for(int i = 0; i<fileList.length; i++) {
 			System.out.println(i + ": " + fileList[i].getName());
 		}
-		System.out.println("new: create new one\n");
+		//System.out.println("new: create new one\n");
 	}
 	
 	public void printAllClasses() {
@@ -564,10 +565,57 @@ public class Functions{
 	
 //*******************************************************************************************************************************************	
 	
-	public void applyNewClass(int position, String ip) {
+private void applyNewClass(String file, String ip) {
+		
 		System.out.println("Applying new class TEST");
+		try {
+			SSHClient ssh = new SSHClient();
+			ssh.addHostKeyVerifier(new PromiscuousVerifier());
+			try {
+				ssh.connect(ip);
+				ssh.authPassword(USER, PASSWORD);
+				Session session = ssh.startSession(); 
+				Shell shell = session.startShell();
+				redirect(shell, session, true);;
+				Expect expect = new ExpectBuilder()
+		                .withOutput(shell.getOutputStream())
+		                .withInputs(shell.getInputStream(), shell.getErrorStream())
+		                .build();
+			    try {	
+			    	execute(expect, "enable");
+			    	execute(expect, "cisco");
+			    	execute(expect, "configure terminal");
+					BufferedReader br = new BufferedReader(new FileReader(CLASSDIR + file));
+					for(String line; (line = br.readLine()) != null; ) 
+							execute(expect, line);   
+			    } finally {
+			    	execute(expect, "disable");
+			    	execute(expect, "exit");
+			    	System.out.println("Class applied successfully!");
+				    expect.close();
+					session.close();
+				} 
+			}
+			finally {
+				ssh.disconnect();
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public void verifyNewClass(String fileName) {
+		// TODO Auto-generated method stub
+		
 	}
 	
+	private void execute(Expect expect, String cmd) throws IOException{
+		expect.send(cmd);
+		expect.sendLine();
+		return;
+	}
+		
 //*******************************************************************************************************************************************
 	
 	private void confStdDF(String ip) {
@@ -576,14 +624,9 @@ public class Functions{
 
 //*******************************************************************************************************************************************
 
-	
-	private void ApplyNewClass(String ip, String filename) {
-		
-	}
-
-	public void verifyNewClass(String fileName) {
-		// TODO Auto-generated method stub
-		
+	private String nameFromPosition(int position) {
+	    String match = fileList[position].getName();
+		return match;
 	}
 }
 
