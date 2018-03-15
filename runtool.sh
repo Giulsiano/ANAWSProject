@@ -32,7 +32,7 @@ if [ ! -e /etc/frr/ospfd.conf ]; then
 fi
 
 # Check ospfd is running
-if $(pgrep ospfd)
+if PID=$(pgrep ospfd)
 then
     echo "ospfd is running"
 else
