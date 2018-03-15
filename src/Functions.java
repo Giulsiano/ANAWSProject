@@ -1,4 +1,5 @@
 
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -225,7 +226,6 @@ public class Functions{
 				if(!routers.contains(addr)) 
 					addr = null;
 			}
-		
 			printNewClasses();
 			while(filepos == null) {
 				System.out.print("Waiting for a choise: ");
@@ -250,7 +250,7 @@ public class Functions{
 					filepos = null;
 			}
 			if(filepos.equals("new")) 
-				defineNewClass(true, null);
+				defineNewClass(true, addr);
 			else {
 				System.out.println("\n" + "Getting router list");
 				routers = getRouterList();
@@ -268,8 +268,8 @@ public class Functions{
 	}
 	
 //******************************************************************************************************************************************* 	
-			
 
+	
 	public String defineNewClass(boolean calledByFunction, String ip) {
 		System.out.println("entering defineNewClass\n");
 		if (calledByFunction == true && (ip == null || ip.isEmpty())){
@@ -395,10 +395,12 @@ public class Functions{
 				ssh.authPassword(USER, PASSWORD);
 				Session session = ssh.startSession(); 
 				Shell shell = session.startShell();
-				redirect(shell, session, true);
-				Expect expect = enableRoot(session);
-			    try {
-					//System.out.println("---> Executing the command...");	
+				redirect(shell, session, true);;
+				Expect expect = new ExpectBuilder()
+		                .withOutput(shell.getOutputStream())
+		                .withInputs(shell.getInputStream(), shell.getErrorStream())
+		                .build();
+			    try {	
 					expect.send("enable");
 					expect.sendLine();
 					expect.send("cisco");
