@@ -623,7 +623,7 @@ private void applyNewClass(String file, String ip) {
 	}
 
 //*******************************************************************************************************************************************
-
+	//aux
 	private String nameFromPosition(int position) {
 	    String match = fileList[position].getName();
 		return match;
