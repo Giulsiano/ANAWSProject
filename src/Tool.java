@@ -59,12 +59,10 @@ public class Tool {
 				break;
 			
 			case 4:
-<<<<<<< HEAD
-				func.defineNewClass(false);
-=======
+				func.defineNewClass(false, null);
 				String fileName = func.defineNewClass(false, null);
 				func.verifyNewClass(fileName);
->>>>>>> cdf9b53df7acfee982b260269b3f4fff73103b71
+
 				break;
 			
 			case 5:

@@ -202,7 +202,6 @@ public class Functions{
 				if(!routers.contains(addr)) 
 					addr = null;
 			}
-<<<<<<< HEAD
 			confStdDF(addr);
 		}
 		else if (input1.equals("std") && input2.equals("all")) {
@@ -215,10 +214,6 @@ public class Functions{
 			
 			for(String ip: routers) {
 				confStdDF(ip);
-=======
-			else if (input.equals("new")) {
-				defineNewClass(false, null);
->>>>>>> cdf9b53df7acfee982b260269b3f4fff73103b71
 			}
 			
 		}
@@ -230,7 +225,6 @@ public class Functions{
 				if(!routers.contains(addr)) 
 					addr = null;
 			}
-<<<<<<< HEAD
 		
 			printNewClasses();
 			while(filepos == null) {
@@ -239,13 +233,9 @@ public class Functions{
 				pos = Integer.parseInt(filepos);
 				if(pos > fileList.length-1)
 					filepos = null;
-=======
-			else if (input.equals("new")) {
-				defineNewClass(false, null);
->>>>>>> cdf9b53df7acfee982b260269b3f4fff73103b71
 			}
 			if(filepos.equals("new")) 
-				defineNewClass(true);
+				defineNewClass(true, addr);
 			else 
 				applyNewClass(pos, addr);
 			
@@ -260,7 +250,7 @@ public class Functions{
 					filepos = null;
 			}
 			if(filepos.equals("new")) 
-				defineNewClass(true);
+				defineNewClass(true, null);
 			else {
 				System.out.println("\n" + "Getting router list");
 				routers = getRouterList();
@@ -278,18 +268,14 @@ public class Functions{
 	}
 	
 //******************************************************************************************************************************************* 	
-	
-<<<<<<< HEAD
-	public void defineNewClass(boolean fromConfDF) {
-		System.out.println("Define new class wizard...\n");
-=======
+			
+
 	public String defineNewClass(boolean calledByFunction, String ip) {
 		System.out.println("entering defineNewClass\n");
 		if (calledByFunction == true && (ip == null || ip.isEmpty())){
 			System.out.println("IP of the router is not known. Exiting.");
 			System.exit(1);
 		}
->>>>>>> cdf9b53df7acfee982b260269b3f4fff73103b71
 		System.out.printf("Enter name of the new class: ");
 		String filename = System.console().readLine();
 		try {
@@ -412,7 +398,6 @@ public class Functions{
 				redirect(shell, session, true);
 				Expect expect = enableRoot(session);
 			    try {
-<<<<<<< HEAD
 					//System.out.println("---> Executing the command...");	
 					expect.send("enable");
 					expect.sendLine();
@@ -420,15 +405,6 @@ public class Functions{
 					expect.sendLine();
 					expect.send("terminal length 0");
 					expect.sendLine();
-=======
-					//System.out.println("---> Executing the command...");
-//					expect.send("enable");
-//					expect.sendLine();
-//					expect.send("cisco");
-//					expect.sendLine();
-//					expect.send("terminal length 0");
-//					expect.sendLine();
->>>>>>> cdf9b53df7acfee982b260269b3f4fff73103b71
 				    expect.send("show running-config");
 				    expect.sendLine();
 			    } finally {
@@ -596,20 +572,17 @@ public class Functions{
 		
 	}
 
-<<<<<<< HEAD
 //*******************************************************************************************************************************************
 
 	
 	private void ApplyNewClass(String ip, String filename) {
 		
 	}
-	
-=======
+
 	public void verifyNewClass(String fileName) {
 		// TODO Auto-generated method stub
 		
 	}
->>>>>>> cdf9b53df7acfee982b260269b3f4fff73103b71
 }
 
 
