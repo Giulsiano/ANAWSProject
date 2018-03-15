@@ -10,8 +10,10 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,11 +39,11 @@ public class Functions{
 	static final String USER = "cisco";
 	static final String PASSWORD = "cisco";
 	static final String[] VTYCOMMAND = {"/usr/bin/vtysh", "-d", "ospfd", "-c", "show ip ospf database"};
-	static final String CLASSDIR = "./classes/";
+	static final String CLASSDIR = "../classes/";
 	private Set<String> localAddress;
 	private String topology;
 	private Runtime rt;
-	
+	private Map<String, Integer> dscpValues;
 	/**
 	 * Enter the root terminal of the Cisco device
 	 * @param s The sshj session object of a previously connected sshj connection
@@ -66,6 +68,29 @@ public class Functions{
     public Functions() {
     	rt = Runtime.getRuntime();
 		localAddress = new HashSet<String>();
+		dscpValues = new HashMap<>();
+		dscpValues.put("Best effort", new Integer(0));
+		dscpValues.put("AF11", new Integer(10));
+		dscpValues.put("AF12", new Integer(12));
+		dscpValues.put("AF13", new Integer(14));
+		dscpValues.put("AF21", new Integer(18));
+		dscpValues.put("AF22", new Integer(20));
+		dscpValues.put("AF23", new Integer(22));
+		dscpValues.put("AF31", new Integer(26));
+		dscpValues.put("AF32", new Integer(28));
+		dscpValues.put("AF33", new Integer(30));
+		dscpValues.put("AF41", new Integer(34));
+		dscpValues.put("AF42", new Integer(36));
+		dscpValues.put("AF43", new Integer(38));
+		dscpValues.put("CS1", new Integer(8));
+		dscpValues.put("CS2", new Integer(16));
+		dscpValues.put("CS3", new Integer(24));
+		dscpValues.put("CS4", new Integer(32));
+		dscpValues.put("CS5", new Integer(40));
+		dscpValues.put("CS6", new Integer(48));
+		dscpValues.put("CS7", new Integer(56));
+		dscpValues.put("EF", new Integer(46));
+		
 		// get address of all interfaces of this machine
 		try {
 			Enumeration<NetworkInterface> ifaces;
@@ -112,7 +137,6 @@ public class Functions{
             session.allocateDefaultPTY();
             final Shell shell = session.startShell();
             redirect(shell, session, false);
-            
         } finally {
             ssh.disconnect();
         }
@@ -178,6 +202,7 @@ public class Functions{
 				if(!routers.contains(addr)) 
 					addr = null;
 			}
+<<<<<<< HEAD
 			confStdDF(addr);
 		}
 		else if (input1.equals("std") && input2.equals("all")) {
@@ -190,6 +215,10 @@ public class Functions{
 			
 			for(String ip: routers) {
 				confStdDF(ip);
+=======
+			else if (input.equals("new")) {
+				defineNewClass(false, null);
+>>>>>>> cdf9b53df7acfee982b260269b3f4fff73103b71
 			}
 			
 		}
@@ -201,6 +230,7 @@ public class Functions{
 				if(!routers.contains(addr)) 
 					addr = null;
 			}
+<<<<<<< HEAD
 		
 			printNewClasses();
 			while(filepos == null) {
@@ -209,6 +239,10 @@ public class Functions{
 				pos = Integer.parseInt(filepos);
 				if(pos > fileList.length-1)
 					filepos = null;
+=======
+			else if (input.equals("new")) {
+				defineNewClass(false, null);
+>>>>>>> cdf9b53df7acfee982b260269b3f4fff73103b71
 			}
 			if(filepos.equals("new")) 
 				defineNewClass(true);
@@ -245,36 +279,116 @@ public class Functions{
 	
 //******************************************************************************************************************************************* 	
 	
+<<<<<<< HEAD
 	public void defineNewClass(boolean fromConfDF) {
 		System.out.println("Define new class wizard...\n");
+=======
+	public String defineNewClass(boolean calledByFunction, String ip) {
+		System.out.println("entering defineNewClass\n");
+		if (calledByFunction == true && (ip == null || ip.isEmpty())){
+			System.out.println("IP of the router is not known. Exiting.");
+			System.exit(1);
+		}
+>>>>>>> cdf9b53df7acfee982b260269b3f4fff73103b71
 		System.out.printf("Enter name of the new class: ");
 		String filename = System.console().readLine();
 		try {
 			PrintWriter classFile = new PrintWriter(new File(CLASSDIR + filename));
-			try {				
-				System.out.println("Commands written here must be valid cisco IOS command.\n"
-						+ "Example to define a new class:\n\n"
-						+ "! define new classification, all hosts matching 192.168.1.* are classified\n"
-						+ "access-list 1 permit 192.168.1.0 0.0.0.255\n"
-						+ "class map match-all VOIP\n"
-						+ " match access-group 1\n\n"
-						+ "Write line by line your class definition below. End with .exit\n"
-						);
-				String input = null;
-				do {
-					input = System.console().readLine();
-					classFile.println(input);
-				}while(!input.equals(".exit"));
-	
-			} finally {
+			classFile.println("class " + filename);
+			System.out.println("Do you prefer to be guided through the class definition?\n" 
+								 + "yes - the wizard will allow you to define basic features such as shaping,\n"
+								 + "      policing and enabling RED\n"
+								 + "no - you can write your own class line by line\n");
+			String userResp = null;
+			do{
+				System.out.println("Response (yes/no): ");
+				userResp = System.console().readLine();
+			}while(!(userResp.equals("yes") || userResp.equals("no")));
+			try {
+				// User wants them to be guided into the configuration
+				if (userResp.equals("yes")) {
+					do {
+						System.out.print("\n\nWrite bandwidth limit (0 = no limit, max 100): ");
+						userResp = System.console().readLine();						
+					} while (!isInsideBound(userResp, 0, 100));
+					if (!userResp.equals("0")) {
+						classFile.println("bandwidth percent " + userResp);
+					}
+					do {
+						System.out.print("\n\nWrite traffic shaping on average speed of (bps, 0 = no shaping): ");
+						userResp = System.console().readLine();						
+					} while (!isInsideBound(userResp, 0, Integer.MAX_VALUE));
+					if (!userResp.equals("0")) {
+						classFile.println("shape average  " + userResp);
+					}
+					do {
+						System.out.print("\n\nApply random early detection to class? (yes/no) ");
+						userResp = System.console().readLine();						
+					} while (!(userResp.equals("yes") || userResp.equals("no")));
+					if(userResp.equals("yes")) {
+						classFile.println("random-detect");
+						classFile.println("no random-detect precedence-based");
+					}
+					do {
+						System.out.print("\n\nSet a DSCP value for this class (literal or numerical, 0 is default): ");
+						userResp = System.console().readLine();						
+					} while (!this.dscpValues.containsKey(userResp.toUpperCase()));
+					if(!(userResp.equals("0") || this.dscpValues.get(userResp.toUpperCase()) == 0)) {
+						classFile.println("set ip dscp " + userResp.toUpperCase());
+					}
+				}
+				else {
+					System.out.println("Commands written here must be valid cisco IOS commands.\n"
+							+ "Example to define a new classification mapping:\n\n"
+							+ "! define new classification, all hosts matching 192.168.1.* are classified\n"
+							+ "access-list 1 permit 192.168.1.0 0.0.0.255\n"
+							+ "class map match-all VOIP\n"
+							+ " match access-group 1\n\n"
+							+ "Write line by line your class definition below. End with .exit\n\n"
+							+ "class " + filename
+							);
+					String input = null;
+					while (true){
+						input = System.console().readLine();
+						if (input.equals(".exit") == true) break;
+						classFile.println(input);
+					}
+				}				
+			}
+			finally {
 				classFile.close();
 			}
 		} catch (FileNotFoundException e) {
 			System.err.println("Cannot create class file on the filesystem");
 			System.exit(1);
 		}
+		return filename;
 	}
 
+	private boolean isInsideBound(String s, int lowerBound, int upperBound) {
+		if (upperBound < lowerBound) {
+			throw new IllegalArgumentException("Lower bound can't be less than upper bound");
+		}
+		int num;
+		try {
+			num = Integer.parseInt(s);
+			if (num > upperBound || num < lowerBound) return false;
+			else return true;
+		}
+		catch (NumberFormatException e) {
+			return false;
+		}
+	}
+	
+	private boolean isInteger(String s) {
+		try {
+			Integer.parseInt(s);
+		}
+		catch (NumberFormatException e) {
+			return false;
+		}
+		return true;
+	}
 //******************************************************************************************************************************************* 	
 	
 	public void showRunningConf() {
@@ -288,7 +402,6 @@ public class Functions{
 			}
 		}
 		try {
-
 			SSHClient ssh = new SSHClient();
 			ssh.addHostKeyVerifier(new PromiscuousVerifier());
 			try {
@@ -297,11 +410,9 @@ public class Functions{
 				Session session = ssh.startSession(); 
 				Shell shell = session.startShell();
 				redirect(shell, session, true);
-			    Expect expect = new ExpectBuilder()
-			                .withOutput(shell.getOutputStream())
-			                .withInputs(shell.getInputStream(), shell.getErrorStream())
-			                .build();
+				Expect expect = enableRoot(session);
 			    try {
+<<<<<<< HEAD
 					//System.out.println("---> Executing the command...");	
 					expect.send("enable");
 					expect.sendLine();
@@ -309,6 +420,15 @@ public class Functions{
 					expect.sendLine();
 					expect.send("terminal length 0");
 					expect.sendLine();
+=======
+					//System.out.println("---> Executing the command...");
+//					expect.send("enable");
+//					expect.sendLine();
+//					expect.send("cisco");
+//					expect.sendLine();
+//					expect.send("terminal length 0");
+//					expect.sendLine();
+>>>>>>> cdf9b53df7acfee982b260269b3f4fff73103b71
 				    expect.send("show running-config");
 				    expect.sendLine();
 			    } finally {
@@ -476,6 +596,7 @@ public class Functions{
 		
 	}
 
+<<<<<<< HEAD
 //*******************************************************************************************************************************************
 
 	
@@ -483,6 +604,12 @@ public class Functions{
 		
 	}
 	
+=======
+	public void verifyNewClass(String fileName) {
+		// TODO Auto-generated method stub
+		
+	}
+>>>>>>> cdf9b53df7acfee982b260269b3f4fff73103b71
 }
 
 
