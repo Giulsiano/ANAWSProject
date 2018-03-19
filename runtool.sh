@@ -39,6 +39,24 @@ else
     echo "ospfd is not running. Please run the service before starting the tool."
 fi
 
+# Make dirs and standard classes if there aren't any
+if [ ! -d "classes" ]; then
+	mkdir classes
+	cd classes
+	touch WEB VOIP VIDEO EXCESS
+	echo "class WEB" > WEB
+	echo " bandwidth percent 5" >> WEB
+	echo " queue-limit 20 packets" >> WEB
+	echo "class VOIP" > VOIP
+	echo " bandwidth percent 30" >> VOIP
+	echo " queue-limit 100 packets" >> VOIP
+	echo "class VIDEO" > VIDEO
+	echo " bandwidth percent 60" >> VIDEO
+	echo "class EXCESS" > EXCESS
+	echo " bandwidth percent 4" >> EXCESS
+	cd -
+fi
+
 INTERFACE0="tap0"
 if [ -h /sys/class/net/${INTERFACE0} ]; then
 	echo "Waiting DHCP lease from interface ${INTERFACE0}"
