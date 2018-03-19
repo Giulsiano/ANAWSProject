@@ -10,12 +10,17 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -605,15 +610,64 @@ private void applyNewClass(String file, String ip) {
 		}
 	}
 
-	public void verifyNewClass(String fileName) {
-		// TODO Auto-generated method stub
-		
+	public void verifyNewClass(String classFileName) throws IOException {
+		Path classPath = Paths.get(CLASSDIR, classFileName);
+		List<String> rows = Files.readAllLines(classPath);
+		boolean saveFile = false;
+		System.out.println("The content of the class " + classFileName + " is the following:\n");
+		printClass(rows);
+		System.out.println("Insert the line or the lines (comma separated list) you want them to be changed (type no if it is all right):");
+		String userInput = System.console().readLine();
+		if (isCommaSeparated(userInput)) {
+			int maxRows = rows.size();
+			Pattern pattern = Pattern.compile("\\d+");	
+			Matcher digits = pattern.matcher(userInput);
+			int rowNum = 0;
+			while (digits.find()) {
+				try {
+					rowNum = Integer.parseInt(digits.group()) - 1; // -1 because we start from element 0, not 1
+					String oldLine = rows.get(rowNum);
+					System.out.println("Old row value: ");
+					System.out.println(oldLine);
+					System.out.println("Insert new line below :");
+					String newLine = System.console().readLine();
+					if (!oldLine.equals(newLine)) {
+						saveFile = true;
+						rows.set(rowNum, newLine);
+					}
+				}
+				catch (NumberFormatException | IndexOutOfBoundsException e ) {
+					System.err.println("You have inserted an invalid row number for this file: " + rowNum);
+					System.err.println("Max number of rows: " + maxRows);
+				}
+			}
+			if (saveFile == true) {
+				Files.write(classPath, rows);
+			}
+		}
+		else {
+			System.err.println("You not have inserted a comma separated list");
+		}
+	}
+	
+	private boolean isCommaSeparated(String s) {
+		Pattern pattern = Pattern.compile("^(\\d+)(,\\s*\\d+)*$|^no$");
+		Matcher match = pattern.matcher(s);
+		return match.matches();
 	}
 	
 	private void execute(Expect expect, String cmd) throws IOException{
 		expect.send(cmd);
 		expect.sendLine();
 		return;
+	}
+	
+	private void printClass(List<String> fileContent) {
+		int rowNum = 0;
+		for (String row : fileContent) {
+			rowNum ++; 
+			System.out.printf("%d %s\n", rowNum, row);
+		}
 	}
 		
 //*******************************************************************************************************************************************
