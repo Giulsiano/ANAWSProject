@@ -10,7 +10,6 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,7 +19,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,6 +35,7 @@ import net.schmizz.sshj.transport.TransportException;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.sf.expectit.Expect;
 import net.sf.expectit.ExpectBuilder;
+import static net.sf.expectit.matcher.Matchers.*;
 
 public class Functions{
 	
@@ -51,6 +50,10 @@ public class Functions{
 	private String topology;
 	private Runtime rt;
 	private Map<String, Integer> dscpValues;
+	private static final String PROMPT = ">";
+	private static final String ROOTPROMPT = "#";
+	private static final String PWDPROMPT = "Password:";
+	
 	/**
 	 * Enter the root terminal of the Cisco device
 	 * @param s The sshj session object of a previously connected sshj connection
@@ -277,7 +280,6 @@ public class Functions{
 
 	
 	public String defineNewClass(boolean calledByFunction, String ip) {
-		System.out.println("entering defineNewClass\n");
 		if (calledByFunction == true && (ip == null || ip.isEmpty())){
 			System.out.println("IP of the router is not known. Exiting.");
 			System.exit(1);
@@ -592,7 +594,7 @@ private void applyNewClass(String file, String ip) {
 			    	execute(expect, "configure terminal");
 					BufferedReader br = new BufferedReader(new FileReader(CLASSDIR + file));
 					for(String line; (line = br.readLine()) != null; ) 
-							execute(expect, line);   
+							execute(expect, line);
 			    } finally {
 			    	execute(expect, "disable");
 			    	execute(expect, "exit");
@@ -615,18 +617,14 @@ private void applyNewClass(String file, String ip) {
 		List<String> rows = Files.readAllLines(classPath);
 		boolean saveFile = false;
 		System.out.println("The content of the class " + classFileName + " is the following:\n");
-		printClass(rows);
+		printClassContent(rows);
 		System.out.println("Insert the line or the lines (comma separated list) you want them to be changed (type no if it is all right):");
 		String userInput = System.console().readLine();
 		if (isCommaSeparated(userInput)) {
 			int maxRows = rows.size();
-			Pattern pattern = Pattern.compile("\\d+");	
-			Matcher digits = pattern.matcher(userInput);
-			int rowNum = 0;
-			while (digits.find()) {
+			for (Integer rowNum : getIntValues(userInput)) {
 				try {
-					rowNum = Integer.parseInt(digits.group()) - 1; // -1 because we start from element 0, not 1
-					String oldLine = rows.get(rowNum);
+					String oldLine = rows.get(rowNum - 1); // We count from 0, user from 1
 					System.out.println("Old row value: ");
 					System.out.println(oldLine);
 					System.out.println("Insert new line below :");
@@ -662,7 +660,7 @@ private void applyNewClass(String file, String ip) {
 		return;
 	}
 	
-	private void printClass(List<String> fileContent) {
+	private void printClassContent(List<String> fileContent) {
 		int rowNum = 0;
 		for (String row : fileContent) {
 			rowNum ++; 
