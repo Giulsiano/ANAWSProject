@@ -612,6 +612,24 @@ private void applyNewClass(String file, String ip) {
 		}
 	}
 
+	/**
+	 * Return a list of all the integers contained in s
+	 * @param s A String that contains some integers
+	 * @return All integers inside the string s
+	 */
+	private List<Integer> getIntValues(String s) {	
+		Pattern p = Pattern.compile("\\d+");
+		Matcher m = p.matcher(s);
+		List<Integer> valueList = null;
+		if (m.matches()) {
+			valueList = new ArrayList<>();
+			while(m.find()) {
+				valueList.add(Integer.parseInt(m.group()));
+			}
+		}
+		return valueList;
+	}
+	
 	public void verifyNewClass(String classFileName) throws IOException {
 		Path classPath = Paths.get(CLASSDIR, classFileName);
 		List<String> rows = Files.readAllLines(classPath);
