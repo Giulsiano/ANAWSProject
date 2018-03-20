@@ -687,11 +687,92 @@ private void applyNewClass(String file, String ip) {
 	}
 		
 //*******************************************************************************************************************************************
-	
-	private void confStdDF(String ip) {
-		
+	/**
+	 * Connects and makes the user to choose one or more standard classes to define on router <b>ip</b>
+	 * @param ip	The IP address of the router on which to apply the standard class/classes 
+	 * @throws IOException If a connection error occours
+	 */
+	private void confStdDF(String ip) throws IOException {
+		List<String> selectedClasses = confStdMenu();
+		SSHClient ssh = new SSHClient();
+		ssh.addHostKeyVerifier(new PromiscuousVerifier());
+		try {
+			System.out.println("Connecting to " + ip);
+			ssh.connect(ip);
+			ssh.authPassword(USER, PASSWORD);
+			Session s = ssh.startSession();
+			s.allocateDefaultPTY();
+			Shell sh = s.startShell();
+			Expect expect = new ExpectBuilder()
+	                .withOutput(sh.getOutputStream())
+	                .withInputs(sh.getInputStream(), sh.getErrorStream())
+	                .withEchoOutput(System.out)
+					.withEchoInput(System.err)
+	                .build();
+			try {
+				expect.expect(contains(PROMPT));
+				expect.sendLine("enable");
+				expect.expect(exact(PWDPROMPT));
+				expect.sendLine(PASSWORD);
+				expect.expect(contains(ROOTPROMPT));
+				expect.sendLine("conf t");
+				expect.expect(contains("(config)"));
+				
+			} 
+			finally {
+				expect.close();
+			}
+		} catch (IOException e) {
+			System.err.println("Can't connect to the router " + ip + ":");
+			System.err.println(e.getMessage());
+		} 
+		finally {
+			ssh.disconnect();
+			ssh.close();
+		}
 	}
-
+	
+	private List<String> confStdMenu() { 
+		System.out.println("Choose which class or classes to apply: \n"
+				+ "1- VoIP\n"
+				+ "2- Video\n"
+				+ "3- Web\n"
+				+ "4- Excess\n"
+				+ "You can insert a comma separated list if you want to apply more than one class");
+		String userInput;
+		do {			
+			userInput = System.console().readLine();
+		} while (!isCommaSeparated(userInput));
+		List<String> cl = new ArrayList<>();
+		for (Integer value : getIntValues(userInput)) {
+			switch (value.intValue()) {
+				case 1:
+					if (!cl.contains("VOIP")) {
+						cl.add("VOIP");
+					}
+					break;
+				case 2:
+					if (!cl.contains("Video")) {
+						cl.add("VIDEO");
+					}
+					break;
+				case 3:
+					if (!cl.contains("WEB")) {
+						cl.add("WEB");
+					}
+					break;
+				case 4:
+					if (!cl.contains("EXCESS")) {
+						cl.add("EXCESS");
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		return cl;
+	}
+	
 //*******************************************************************************************************************************************
 	//aux
 	private String nameFromPosition(int position) {
