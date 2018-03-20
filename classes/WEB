@@ -1,5 +1,3 @@
 class WEB
-shape average  15000000
-random-detect
-no random-detect precedence-based
-set ip dscp AF12
+ bandwidth percent 5
+ queue-limit 20 packets
