@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,6 +36,9 @@ import net.schmizz.sshj.transport.TransportException;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.sf.expectit.Expect;
 import net.sf.expectit.ExpectBuilder;
+import net.sf.expectit.MultiResult;
+import net.sf.expectit.Result;
+
 import static net.sf.expectit.matcher.Matchers.*;
 
 public class Functions{
@@ -53,7 +57,8 @@ public class Functions{
 	private static final String PROMPT = ">";
 	private static final String ROOTPROMPT = "#";
 	private static final String PWDPROMPT = "Password:";
-	
+	private final int KB = 1024;
+	private final int MB = KB*KB;
 	/**
 	 * Enter the root terminal of the Cisco device
 	 * @param s The sshj session object of a previously connected sshj connection
@@ -708,16 +713,19 @@ private void applyNewClass(String file, String ip) {
 	                .withInputs(sh.getInputStream(), sh.getErrorStream())
 	                .withEchoOutput(System.out)
 					.withEchoInput(System.err)
+					.withBufferSize(10*KB)
 	                .build();
 			try {
+				// Enter configure terminal
 				expect.expect(contains(PROMPT));
 				expect.sendLine("enable");
 				expect.expect(exact(PWDPROMPT));
 				expect.sendLine(PASSWORD);
 				expect.expect(contains(ROOTPROMPT));
-				expect.sendLine("conf t");
-				expect.expect(contains("(config)"));
+				expect.sendLine("conf t").expect(contains("(config)"));
 				
+				// Configure access list
+				System.out.println("Creating access list");
 			} 
 			finally {
 				expect.close();
@@ -726,6 +734,57 @@ private void applyNewClass(String file, String ip) {
 			System.err.println("Can't connect to the router " + ip + ":");
 			System.err.println(e.getMessage());
 		} 
+		finally {
+			ssh.disconnect();
+			ssh.close();
+		}
+	}
+	
+	/**
+	 * Return the list of all interfaces configured in the router. This functions assumes you have just connected
+	 * to the router and you are on a root prompt (not configure terminal or similar).
+	 * @param expect The expect object required to send commands and filter output
+	 * @return The list of all interfaces of the router, it doesn't discriminate from up or down ones
+	 * @throws IOException 
+	 */
+	private List<String> getRouterInterfaces(Expect expect) throws IOException{
+		List<String> ifaces = new ArrayList<>();
+		
+		// We assume we are on root prompt on the router
+		expect.sendLine("terminal length 0");
+		expect.sendLine("show running-config");
+		String output = expect.expect(regexp("#")).getBefore();
+		Pattern pattern = Pattern.compile("interface (.*)", Pattern.MULTILINE);
+		Matcher match = pattern.matcher(output);
+		while (match.find()) {
+			ifaces.add(match.group());
+		}
+		return ifaces;
+	}
+	
+	public void testGetRouterInterfaces() throws IOException {
+		SSHClient ssh = new SSHClient();
+		ssh.addHostKeyVerifier(new PromiscuousVerifier());
+		try {
+			System.out.println("Connecting to 192.168.0.254");
+			ssh.connect("192.168.0.254");
+			ssh.authPassword(USER, PASSWORD);
+			Session s = ssh.startSession();
+			s.allocateDefaultPTY();
+			Shell sh = s.startShell();
+			StringBuilder buffer =new StringBuilder();
+			Expect expect = new ExpectBuilder()
+	                .withOutput(sh.getOutputStream())
+	                .withInputs(sh.getInputStream(), sh.getErrorStream())
+	                .withEchoOutput(System.out)
+					.withEchoInput(buffer)
+					.withBufferSize(10*KB)
+	                .build();
+			expect.sendLine("enable").expect(contains(PWDPROMPT));
+			expect.sendLine(PASSWORD).expect(contains("#"));
+			List<String> ifaces = getRouterInterfaces(expect);
+			System.out.println(buffer.toString());
+		}
 		finally {
 			ssh.disconnect();
 			ssh.close();

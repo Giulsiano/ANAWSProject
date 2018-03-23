@@ -67,11 +67,15 @@ public class Tool {
 				func.showRunningConf();
 				break;
 			
+			case 6:
+				func.testGetRouterInterfaces();
+				break;
+				
 			default:
 				System.out.println("This command does not exist\n");
 				waitForCommand();
-		}
-		
+				break;
+		}	
 	}
 	
 	public void printManual() throws IOException {
