@@ -58,52 +58,31 @@ public class Functions{
 	private static final String ROOTPROMPT = "#";
 	private static final String PWDPROMPT = "Password:";
 	private final int KB = 1024;
-	private final int MB = KB*KB;
-	/**
-	 * Enter the root terminal of the Cisco device
-	 * @param s The sshj session object of a previously connected sshj connection
-	 * @return the Expect object where the command enable was sent 
-	 * @throws SSHException
-	 * @throws IOException
-	 */
-	private Expect enableRoot(Session s) throws SSHException, IOException {
-		s.allocateDefaultPTY();
-		Shell sh = s.startShell();
-		Expect expect = new ExpectBuilder()
-                .withOutput(sh.getOutputStream())
-                .withInputs(sh.getInputStream(), sh.getErrorStream())
-                .build();
-		expect.send("enable");
-		expect.sendLine();
-		expect.send("cisco");
-		expect.sendLine();
-		return expect;
-	}
 	
     public Functions() {
     	rt = Runtime.getRuntime();
 		localAddress = new HashSet<String>();
 		dscpValues = new HashMap<>();
-		dscpValues.put("Best effort", new Integer(0));
-		dscpValues.put("AF11", new Integer(10));
-		dscpValues.put("AF12", new Integer(12));
-		dscpValues.put("AF13", new Integer(14));
-		dscpValues.put("AF21", new Integer(18));
-		dscpValues.put("AF22", new Integer(20));
-		dscpValues.put("AF23", new Integer(22));
-		dscpValues.put("AF31", new Integer(26));
-		dscpValues.put("AF32", new Integer(28));
-		dscpValues.put("AF33", new Integer(30));
-		dscpValues.put("AF41", new Integer(34));
-		dscpValues.put("AF42", new Integer(36));
-		dscpValues.put("AF43", new Integer(38));
-		dscpValues.put("CS1", new Integer(8));
-		dscpValues.put("CS2", new Integer(16));
-		dscpValues.put("CS3", new Integer(24));
-		dscpValues.put("CS4", new Integer(32));
-		dscpValues.put("CS5", new Integer(40));
-		dscpValues.put("CS6", new Integer(48));
-		dscpValues.put("CS7", new Integer(56));
+		dscpValues.put("Best effort", 0);
+		dscpValues.put("AF11", 10);
+		dscpValues.put("AF12", 12);
+		dscpValues.put("AF13", 14);
+		dscpValues.put("AF21", 18);
+		dscpValues.put("AF22", 20);
+		dscpValues.put("AF23", 22);
+		dscpValues.put("AF31", 26);
+		dscpValues.put("AF32", 28);
+		dscpValues.put("AF33", 30);
+		dscpValues.put("AF41", 34);
+		dscpValues.put("AF42", 36);
+		dscpValues.put("AF43", 38);
+		dscpValues.put("CS1", 8);
+		dscpValues.put("CS2", 16);
+		dscpValues.put("CS3", 24);
+		dscpValues.put("CS4", 32);
+		dscpValues.put("CS5", 40);
+		dscpValues.put("CS6", 48);
+		dscpValues.put("CS7", 56);
 		dscpValues.put("EF", new Integer(46));
 		
 		// get address of all interfaces of this machine
@@ -140,21 +119,20 @@ public class Functions{
 				userInput = null;
 			}
 		}
-		
-		// Connect to the router
-		final SSHClient ssh = new SSHClient();
-        // we don't need to verify the host. This is a toy tool.
-        ssh.addHostKeyVerifier(new PromiscuousVerifier());
-        ssh.connect(userInput);
-        try {
-            ssh.authPassword(USER, PASSWORD);
-            final Session session = ssh.startSession();
-            session.allocateDefaultPTY();
-            final Shell shell = session.startShell();
-            redirect(shell, session, false);
-        } finally {
-            ssh.disconnect();
-        }
+		OSPFRouter router = new OSPFRouter(userInput);
+		router.connect(USER, PASSWORD);
+		Expect exp = router.getExpectIt();
+		try {
+			String userInput;
+			do {
+				userInput = System.console().readLine();
+				exp.sendLine(userInput);
+			}while (!"quit".equals(userInput) || !"exit".equals(userInput));
+		}
+		catch (Exception e) {
+			
+		}
+		router.disconnect();	
 	}
 	
 //******************************************************************************************************************************************* 
@@ -190,7 +168,7 @@ public class Functions{
 		String addr = null;
 		String filepos = null;
 		int pos = 0;
-		System.out.println("Starting DiffServ Configuratin wizard...\n");
+		System.out.println("Starting DiffServ Configuration wizard...\n");
 		printAllClasses();
 		while(input1 == null) {
 			System.out.print("Do you want to use standard (std) or new classes(new)? ");
@@ -379,18 +357,10 @@ public class Functions{
 		}
 	}
 	
-	private boolean isInteger(String s) {
-		try {
-			Integer.parseInt(s);
-		}
-		catch (NumberFormatException e) {
-			return false;
-		}
-		return true;
-	}
+
 //******************************************************************************************************************************************* 	
 	
-	public void showRunningConf() {
+	public void showRunningConf() throws IOException {
 
 		printRouterList();
 		while(userInput == null) {
@@ -400,40 +370,10 @@ public class Functions{
 				userInput = null;
 			}
 		}
-		try {
-			SSHClient ssh = new SSHClient();
-			ssh.addHostKeyVerifier(new PromiscuousVerifier());
-			try {
-				ssh.connect(userInput);
-				ssh.authPassword(USER, PASSWORD);
-				Session session = ssh.startSession(); 
-				Shell shell = session.startShell();
-				redirect(shell, session, true);;
-				Expect expect = new ExpectBuilder()
-		                .withOutput(shell.getOutputStream())
-		                .withInputs(shell.getInputStream(), shell.getErrorStream())
-		                .build();
-			    try {	
-					expect.send("enable");
-					expect.sendLine();
-					expect.send("cisco");
-					expect.sendLine();
-					expect.send("terminal length 0");
-					expect.sendLine();
-				    expect.send("show running-config");
-				    expect.sendLine();
-			    } finally {
-				    expect.close();
-					session.close();
-				} 
-			}
-			finally {
-				ssh.disconnect();
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		OSPFRouter router = new OSPFRouter(userInput);
+		router.connect(USER, PASSWORD);
+		System.out.println(router.getRunningConfig());
+		router.disconnect();
 	}
 	
 //******************************************************************************************************************************************* 
@@ -488,9 +428,10 @@ public class Functions{
 		Matcher matcher = pattern.matcher(routerLinkTable);
 		List<String> routerIds = new ArrayList<String>();
 		while (matcher.find()) {
+			String id = matcher.group();
 			// Add address which doesn't belong to this machine
-			if (!localAddress.contains(matcher.group())) {				
-				routerIds.add(matcher.group());
+			if (!localAddress.contains(id)) {				
+				routerIds.add(id);
 			}
 		}
 		return routerIds;
@@ -505,7 +446,6 @@ public class Functions{
 			System.err.println("Error retrieving list of router");
 			return;
 		}
-		
 		// Print router list and make the user to choose
 		System.out.println("List of routers:");
 		for(String ip: routers) {
@@ -516,6 +456,7 @@ public class Functions{
 	
 //******************************************************************************************************************************************* 	
 	
+
 	/**
 	 *  Redirect output stream in order to send user's command to the router
 	 * @param sh

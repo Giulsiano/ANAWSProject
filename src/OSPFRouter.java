@@ -2,6 +2,8 @@ import java.io.IOException;
 import java.net.Inet4Address;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.ConnectionException;
@@ -18,6 +20,7 @@ import static net.sf.expectit.filter.Filters.replaceInString;
 import static net.sf.expectit.matcher.Matchers.contains;
 import static net.sf.expectit.matcher.Matchers.regexp;
 import static net.sf.expectit.matcher.Matchers.exact;
+import static net.sf.expectit.matcher.Matchers.eof;
 
 /**
  * This Class models the interaction to and from the Router the user wants to connect to. For now it
@@ -34,6 +37,8 @@ public class OSPFRouter {
 	private Session session;
 	private Shell shell;
 	private Expect exp;
+
+
 	private boolean isConnected;
 	private boolean isRoot;
 	private boolean isConfT;
@@ -43,15 +48,15 @@ public class OSPFRouter {
 
 	public static final String ROOTPROMPT = "#";
 	public static final String PROMPT = ">";
-	public static final String PASSWORDPROMPT = "Password:";
+	public static final String PASSWORDPROMPT = "Password: ";
 	private static final String PASSWORD = "cisco";
 	private int capacity = 10*1024; // 10 KB of buffer
 	
 	/**
-	 * Crearte new instance of OSPFRouter. It allocates the ssh client instance and add a promiscuous verifier
+	 * Create new instance of OSPFRouter. It allocates the ssh client instance and add a promiscuous verifier
 	 * to avoid ssh checking.
 	 */
-	public OSPFRouter() {
+	private void routerInit() {
 		ssh = new SSHClient();
 		ssh.addHostKeyVerifier(new PromiscuousVerifier());
 		this.buffer = new StringBuilder(this.capacity);
@@ -60,17 +65,14 @@ public class OSPFRouter {
 	}
 	
 	public OSPFRouter(String ip) {
-		this();
+		routerInit();
 		this.ip = ip;
 	}
 	
 	public OSPFRouter(String ip, int capacity) {
 		this.capacity = capacity;
-		ssh = new SSHClient();
-		ssh.addHostKeyVerifier(new PromiscuousVerifier());
-		this.buffer = new StringBuilder(this.capacity);
-		this.isConnected = this.isRoot = false;
-		this.isConfT = false;
+		routerInit();
+		this.ip = ip;
 	}
 	
 	/**
@@ -92,8 +94,29 @@ public class OSPFRouter {
 		session = ssh.startSession();
 		session.allocateDefaultPTY();
 		shell = session.startShell();
-		hostname = ssh.getRemoteHostname();
+		exp =  new ExpectBuilder()
+				.withOutput(shell.getOutputStream())
+				.withInputs(shell.getInputStream(), shell.getErrorStream())
+				.withEchoInput(System.out)
+				.withEchoOutput(System.err)
+				.withInputFilters(removeColors(), 
+						removeNonPrintable(), 
+						replaceInString("^!(.*)$", ""))
+				.withExceptionOnFailure()
+				.build();
+		hostname = exp.expect(regexp(PROMPT)).getBefore().trim();
+		// make the router to send all the command output without --more-- option
+		exp.sendLine("terminal length 0");
 		isConnected = true;
+	}
+
+	public void sendCommand(String command) throws IOException {
+		// clear the buffer to store only the output of the last command
+		exp.sendLine(command);
+	}
+	
+	public String getHostname() throws IOException {
+		return hostname;
 	}
 	
 	/**
@@ -106,13 +129,22 @@ public class OSPFRouter {
 	public Shell getShell() {
 		return shell;
 	}
+	
+	/**
+	 * @return An Expect object for interacting with the router
+	 */
+	public Expect getExpectIt() {
+		return exp;
+	}
 
 	public void disconnect() throws IOException {
 		if (!ssh.isConnected()) {
 			return;
 		}
 		if (session.isOpen()) {
-			exp.close();
+			if (exp != null) {
+				exp.close();
+			}
 			session.close();
 		}
 		ssh.disconnect();
@@ -132,56 +164,44 @@ public class OSPFRouter {
 	 * Enable the root prompt on the router.
 	 * @throws IOException
 	 */
-	private void enableRootPrompt() throws IOException {
-		if (this.isRoot) {
-			return;
-		}
-		if (shell == null) {
+	public void enableRootPrompt() throws IOException {
+		if (!this.isConnected()) {
 			throw new ConnectionException("Router is not connected");
 		}
-		this.exp = new ExpectBuilder()
-                .withOutput(shell.getOutputStream())
-                .withInputs(shell.getInputStream(), shell.getErrorStream())
-                .withEchoInput(buffer)
-                .withEchoOutput(System.err)
-                .withInputFilters(removeColors(), 
-                				  removeNonPrintable(), 
-                				  replaceInString("^!(.*)$", ""))
-                .withExceptionOnFailure()
-                .build();
-		exp.expect(contains(hostname + PROMPT));
-		exp.sendLine("enable").expect(exact(PASSWORDPROMPT));
+		if (this.isConfT) {
+			exp.sendLine("end").expect(contains(ROOTPROMPT));
+			this.isConfT = false;
+		}
+		if (this.isRoot()) return;
+		exp.sendLine("enable").expect(contains(PASSWORDPROMPT));
 		exp.sendLine(PASSWORD).expect(contains(hostname + ROOTPROMPT));
 		this.isRoot = true;
 	}
 	
-	private void disableRootPrompt() throws IOException {
+	public void disableRootPrompt() throws IOException {
 		if (!this.isConnected()) {
 			throw new ConnectionException("Router is not connected");
 		}
-		if (exp == null) {
-			throw new NullPointerException("Expect object is null");
-		}
 		if (this.isConfT) {
-			exp.sendLine("end").expect(exact(hostname + ROOTPROMPT));
+			exp.sendLine("end").expect(contains(hostname + ROOTPROMPT));
 			this.isConfT = false;
 		}
-		exp.sendLine("disable").expect(exact(hostname + PROMPT));
+		exp.sendLine("disable").expect(contains(hostname + PROMPT));
 		this.isRoot = false;
 	}
 	
-	private void setConfigureTerminal() throws IOException {
+	public void setConfigureTerminal() throws IOException {
 		enableRootPrompt();
 		exp.sendLine("conf t").expect(contains("(config)"));
 		this.isConfT = true;
 	}
 	
-	private void unsetConfigureTerminal() throws IOException{
+	public void unsetConfigureTerminal() throws IOException{
 		if (!this.isConfT) {
 			return;
 		}
-		this.isConfT = false;
 		exp.sendLine("end").expect(exact(hostname + ROOTPROMPT));
+		this.isConfT = false;
 	}
 	
 	/**
@@ -199,12 +219,20 @@ public class OSPFRouter {
 		for (String cmd : commands) {
 			
 		}
+		unsetConfigureTerminal();
 	}
 	
 	public String getRunningConfig () throws IOException{
 		if (!this.isConnected()) {
 			throw new ConnectionException("Router is not connected");
 		}
-		return exp.sendLine("show running-config").expect(regexp(hostname + ROOTPROMPT)).getBefore();
+		enableRootPrompt();
+		String out = exp.sendLine("show running-config")
+					     .expect(regexp(hostname + ROOTPROMPT))
+					     .getBefore();
+		disableRootPrompt();
+		String conf = out.replaceAll("^!.*$", "");
+		return conf;
+		
 	}
 }
