@@ -69,43 +69,6 @@ else
 	exit 1 
 fi
 
-
-INTERFACE1="tap1"
-if [ -h /sys/class/net/${INTERFACE1} ]; then
-	echo "Waiting DHCP lease from interface ${INTERFACE1}"
-	sudo dhclient -pf ${DHCPPIDFILE} ${INTERFACE1} || { echo "DHCP Error. Check connectivity"; exit 1; }
-	if [ $? -ne 0 ]; then
-		exit 1
-	fi
-else
-	echo "${INTERFACE1} hasn't been found in this computer. Exiting"
-	exit 1 
-fi
-
-INTERFACE2="tap2"
-if [ -h /sys/class/net/${INTERFACE2} ]; then
-	echo "Waiting DHCP lease from interface ${INTERFACE2}"
-	sudo dhclient -pf ${DHCPPIDFILE} ${INTERFACE2} || { echo "DHCP Error. Check connectivity"; exit 1; }
-	if [ $? -ne 0 ]; then
-		exit 1
-	fi
-else
-	echo "${INTERFACE2} hasn't been found in this computer. Exiting"
-	exit 1 
-fi
-
-INTERFACE3="tap3"
-if [ -h /sys/class/net/${INTERFACE3} ]; then
-	echo "Waiting DHCP lease from interface ${INTERFACE3}"
-	sudo dhclient -pf ${DHCPPIDFILE} ${INTERFACE3} || { echo "DHCP Error. Check connectivity"; exit 1; }
-	if [ $? -ne 0 ]; then
-		exit 1
-	fi
-else
-	echo "${INTERFACE3} hasn't been found in this computer. Exiting"
-	exit 1 
-fi
-
 LIBDIR=${LIBDIR:-../lib}
 JAVACP=${LIBDIR}/bcprov-jdk15on-159.jar:
 JAVACP=${JAVACP}${LIBDIR}/slf4j-api-1.7.9.jar:
