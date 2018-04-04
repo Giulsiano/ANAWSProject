@@ -114,7 +114,10 @@ public class Functions{
 		printRouterList();
 		while(userInput == null) {
 			System.out.println("Choose the router IP of the list to which you want to connect to:");
+			System.out.println("Enter .exit to return back");
 			userInput = System.console().readLine();
+			if(userInput.equals(".exit"))
+				return;
 			if (!routers.contains(userInput)) {
 				userInput = null;
 			}
@@ -171,8 +174,11 @@ public class Functions{
 		System.out.println("Starting DiffServ Configuration wizard...\n");
 		printAllClasses();
 		while(input1 == null) {
-			System.out.print("Do you want to use standard (std) or new classes(new)? ");
+			System.out.println("Do you want to use standard (std) or new classes(new)? ");
+			System.out.println("Enter .exit to return back");
 			input1 = System.console().readLine();
+			if(input1.equals(".exit"))
+				return;
 			if(!input1.equals("std") && !input1.equals("new"))
 				input1 = null;
 		}
@@ -267,8 +273,11 @@ public class Functions{
 			System.out.println("IP of the router is not known. Exiting.");
 			System.exit(1);
 		}
-		System.out.printf("Enter name of the new class: ");
+		System.out.printf("Enter name of the new class: \n");
+		System.out.println("Enter .exit to return back");
 		String filename = System.console().readLine();
+		if(filename.equals(".exit"))
+			return null;
 		try {
 			PrintWriter classFile = new PrintWriter(new File(CLASSDIR + filename));
 			classFile.println("class " + filename);
