@@ -580,14 +580,10 @@ public class Functions{
 	 * @return All integers inside the string s
 	 */
 	private List<Integer> getIntValues(String s) {	
-		Pattern p = Pattern.compile("\\d+");
-		Matcher m = p.matcher(s);
-		List<Integer> valueList = null;
-		if (m.matches()) {
-			valueList = new ArrayList<>();
-			while(m.find()) {
-				valueList.add(Integer.parseInt(m.group()));
-			}
+		Matcher m = Pattern.compile("(\\d+)", Pattern.MULTILINE).matcher(s);
+		List<Integer> valueList = new ArrayList<>();
+		while(m.find()) {
+			valueList.add(Integer.parseInt(m.group()));
 		}
 		return valueList;
 	}
@@ -654,7 +650,8 @@ public class Functions{
 	 * @param ip	The IP address of the router on which to apply the standard class/classes 
 	 * @throws IOException If a connection error occours
 	 */
-	private void confStdDF(String ip) throws IOException {
+	// TODO make it public again afrer testing it
+	public void confStdDF(String ip) throws IOException {
 		List<String> selectedClasses = confStdMenu();
 		
 		// Connect to the router to retrieve only the interface network informations. This is needed because 
@@ -679,7 +676,7 @@ public class Functions{
 							  (selectedClasses.size() > 1 ? " classes" : " class") +
 							   " (1-%d): ", ifaceListSize);
 			input = System.console().readLine();
-		}while (isInsideBound(input, 1, ifaceListSize));
+		}while (!isInsideBound(input, 1, ifaceListSize));
 		List<String> commands = getStdClassConfigureCommands(ifaceList.get(Integer.parseInt(input)),
 															 selectedClasses); 
 		router.connect(USER, PASSWORD);
@@ -727,11 +724,11 @@ public class Functions{
 		}
 		
 		// Redo the same loop for setting policy
-		accessListNum = 101;
 		String ifaceName = pair.getKey();
+		
 		// Set the policy name, i.e. Et11 
 		String policyName = (ifaceName.substring(0, 2) + 
-							 ifaceName.substring(ifaceName.length() - 3, ifaceName.length() - 1))
+							 ifaceName.substring(ifaceName.length() - 3, ifaceName.length()))
 							.replaceAll("/","");
 		commands.add("policy-map " + policyName);
 		for (String dsClass : classes) {
@@ -741,7 +738,7 @@ public class Functions{
 			}
 			catch (IOException e) {
 				System.err.println("Can't read file " + dsClass);
-				break;
+				return null;
 			}
 		}
 		return commands;

@@ -69,11 +69,7 @@ public class Tool {
 				break;
 			
 			case 6:
-				OSPFRouter router = new OSPFRouter("192.168.0.254");
-				router.connect("cisco", "cisco");
-				Map<String, String> conf = router.getInterfaceNetwork();
-				router.disconnect();
-				System.out.println(conf);
+				func.confStdDF("192.168.0.254");
 				break;
 				
 			default:
