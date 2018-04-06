@@ -18,12 +18,14 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javafx.util.Pair;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.common.IOUtils;
 import net.schmizz.sshj.common.LoggerFactory;
@@ -83,7 +85,7 @@ public class Functions{
 		dscpValues.put("CS5", 40);
 		dscpValues.put("CS6", 48);
 		dscpValues.put("CS7", 56);
-		dscpValues.put("EF", new Integer(46));
+		dscpValues.put("EF", 46);
 		
 		// get address of all interfaces of this machine
 		try {
@@ -266,7 +268,6 @@ public class Functions{
 	}
 	
 //******************************************************************************************************************************************* 	
-
 	
 	public String defineNewClass(boolean calledByFunction, String ip) {
 		if (calledByFunction == true && (ip == null || ip.isEmpty())){
@@ -315,10 +316,18 @@ public class Functions{
 						classFile.println("random-detect");
 						classFile.println("no random-detect precedence-based");
 					}
+					boolean checked = false;
 					do {
 						System.out.print("\n\nSet a DSCP value for this class (literal or numerical, 0 is default): ");
-						userResp = System.console().readLine();						
-					} while (!this.dscpValues.containsKey(userResp.toUpperCase()));
+						userResp = System.console().readLine();
+						try {
+							int dscpIntValue = Integer.parseInt(userResp);
+							checked = this.dscpValues.containsValue(dscpIntValue) ? true : false; 
+						}
+						catch (NumberFormatException e){
+							checked = this.dscpValues.containsKey(userResp.toUpperCase()) ? true : false;
+						}
+					} while (!checked);
 					if(!(userResp.equals("0") || this.dscpValues.get(userResp.toUpperCase()) == 0)) {
 						classFile.println("set ip dscp " + userResp.toUpperCase());
 					}
@@ -334,11 +343,11 @@ public class Functions{
 							+ "class " + filename
 							);
 					String input = null;
-					while (true){
+					do {
 						input = System.console().readLine();
 						if (input.equals(".exit") == true) break;
 						classFile.println(input);
-					}
+					} while (true);
 				}				
 			}
 			finally {
@@ -366,7 +375,6 @@ public class Functions{
 		}
 	}
 	
-
 //******************************************************************************************************************************************* 	
 	
 	public void showRunningConf() throws IOException {
@@ -465,7 +473,6 @@ public class Functions{
 	
 //******************************************************************************************************************************************* 	
 	
-
 	/**
 	 *  Redirect output stream in order to send user's command to the router
 	 * @param sh
@@ -527,7 +534,7 @@ public class Functions{
 	
 //*******************************************************************************************************************************************	
 	
-private void applyNewClass(String file, String ip) {
+	private void applyNewClass(String file, String ip) {
 		
 		System.out.println("Applying new class TEST");
 		try {
@@ -649,47 +656,98 @@ private void applyNewClass(String file, String ip) {
 	 */
 	private void confStdDF(String ip) throws IOException {
 		List<String> selectedClasses = confStdMenu();
-		SSHClient ssh = new SSHClient();
-		ssh.addHostKeyVerifier(new PromiscuousVerifier());
-		try {
-			System.out.println("Connecting to " + ip);
-			ssh.connect(ip);
-			ssh.authPassword(USER, PASSWORD);
-			Session s = ssh.startSession();
-			s.allocateDefaultPTY();
-			Shell sh = s.startShell();
-			Expect expect = new ExpectBuilder()
-	                .withOutput(sh.getOutputStream())
-	                .withInputs(sh.getInputStream(), sh.getErrorStream())
-	                .withEchoOutput(System.out)
-					.withEchoInput(System.err)
-					.withBufferSize(10*KB)
-	                .build();
-			try {
-				// Enter configure terminal
-				expect.expect(contains(PROMPT));
-				expect.sendLine("enable");
-				expect.expect(exact(PWDPROMPT));
-				expect.sendLine(PASSWORD);
-				expect.expect(contains(ROOTPROMPT));
-				expect.sendLine("conf t").expect(contains("(config)"));
-				
-				// Configure access list
-				System.out.println("Creating access list");
-			} 
-			finally {
-				expect.close();
-			}
-		} catch (IOException e) {
-			System.err.println("Can't connect to the router " + ip + ":");
-			System.err.println(e.getMessage());
-		} 
-		finally {
-			ssh.disconnect();
-			ssh.close();
+		
+		// Connect to the router to retrieve only the interface network informations. This is needed because 
+		// the configuration process can take longer time than the ssh disconnection timeout.
+		OSPFRouter router = new OSPFRouter(ip);
+		router.connect(USER, PASSWORD);
+		List<Pair<String, String>> ifaceList = router.getInterfaceNetwork();
+		router.disconnect();
+		
+		// Ask the user all the parameters needed for the conf serv to be set up.
+		System.out.println("The following is the list of interfaces of " + ip);
+		System.out.println("#  Interface\t\tAddress");
+		int i = 1;
+		for(Pair<String, String> iface : ifaceList) {
+			System.out.println(i + "  " + iface.getKey() + "\t\t" + iface.getValue());
+			i ++;
 		}
+		String input;
+		int ifaceListSize = ifaceList.size();
+		do {// At least there is an interface at this point, the one with ip as address
+			System.out.printf("Choose the interface to apply the diffserv" +
+							  (selectedClasses.size() > 1 ? " classes" : " class") +
+							   " (1-%d): ", ifaceListSize);
+			input = System.console().readLine();
+		}while (isInsideBound(input, 1, ifaceListSize));
+		List<String> commands = getStdClassConfigureCommands(ifaceList.get(Integer.parseInt(input)),
+															 selectedClasses); 
+		router.connect(USER, PASSWORD);
+		router.configureRouter(commands);
+		router.disconnect();
 	}
 	
+	/**
+	 * Read the file of the standard classes and return the list of command from it
+	 * @param className The name of the class file to be read
+	 * @return	List of commands written into the file
+	 * @throws IOException If reading the file makes some problems
+	 */
+	private List<String> readClassCommands(String className) throws IOException{
+		return Files.readAllLines(Paths.get(CLASSDIR, className));
+	}
+	
+	private List<String> getStdClassConfigureCommands(Pair<String, String> pair, List<String> classes) {
+		List<String> commands = new LinkedList<>();
+		int accessListNum = 101;
+		
+		// Define different access lists, one for each standard class
+		for (String dsClass : classes) {
+			switch (dsClass) {
+				case "WEB":
+					commands.add("access-list " + accessListNum + " permit tcp any any range www 81");
+					break;
+					
+				case "VIDEO":
+				case "VOIP":
+					commands.add("access-list " + accessListNum + " permit udp any any");
+					break;
+					
+				case "EXCESS":
+					commands.add("access-list " + accessListNum + " permit any");
+					break;
+					
+				default:
+					throw new IllegalArgumentException("no standard class called " + dsClass);
+			}
+			commands.add("class-map match-all " + dsClass);
+			commands.add("match access-group " + accessListNum);
+			commands.add("exit");
+			accessListNum ++;
+		}
+		
+		// Redo the same loop for setting policy
+		accessListNum = 101;
+		String ifaceName = pair.getKey();
+		// Set the policy name, i.e. Et11 
+		String policyName = (ifaceName.substring(0, 2) + 
+							 ifaceName.substring(ifaceName.length() - 3, ifaceName.length() - 1))
+							.replaceAll("/","");
+		commands.add("policy-map " + policyName);
+		for (String dsClass : classes) {
+			try {
+				commands.addAll(readClassCommands(dsClass));
+				commands.add("exit");
+			}
+			catch (IOException e) {
+				System.err.println("Can't read file " + dsClass);
+				break;
+			}
+		}
+		return commands;
+	}
+	
+
 	/**
 	 * Return the list of all interfaces configured in the router. This functions assumes you have just connected
 	 * to the router and you are on a root prompt (not configure terminal or similar).
@@ -712,34 +770,6 @@ private void applyNewClass(String file, String ip) {
 		return ifaces;
 	}
 	
-	public void testGetRouterInterfaces() throws IOException {
-		SSHClient ssh = new SSHClient();
-		ssh.addHostKeyVerifier(new PromiscuousVerifier());
-		try {
-			System.out.println("Connecting to 192.168.0.254");
-			ssh.connect("192.168.0.254");
-			ssh.authPassword(USER, PASSWORD);
-			Session s = ssh.startSession();
-			s.allocateDefaultPTY();
-			Shell sh = s.startShell();
-			StringBuilder buffer =new StringBuilder();
-			Expect expect = new ExpectBuilder()
-	                .withOutput(sh.getOutputStream())
-	                .withInputs(sh.getInputStream(), sh.getErrorStream())
-	                .withEchoOutput(System.out)
-					.withEchoInput(buffer)
-					.withBufferSize(10*KB)
-	                .build();
-			expect.sendLine("enable").expect(contains(PWDPROMPT));
-			expect.sendLine(PASSWORD).expect(contains("#"));
-			List<String> ifaces = getRouterInterfaces(expect);
-			System.out.println(buffer.toString());
-		}
-		finally {
-			ssh.disconnect();
-			ssh.close();
-		}
-	}
 	
 	private List<String> confStdMenu() { 
 		System.out.println("Choose which class or classes to apply: \n"

@@ -1,10 +1,13 @@
 import java.io.IOException;
 import java.net.Inet4Address;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javafx.util.Pair;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.ConnectionException;
 import net.schmizz.sshj.connection.channel.direct.Session;
@@ -131,7 +134,7 @@ public class OSPFRouter {
 	}
 	
 	/**
-	 * @return An Expect object for interacting with the router
+	 * @return The Expect object for interacting with the router
 	 */
 	public Expect getExpectIt() {
 		return exp;
@@ -150,14 +153,30 @@ public class OSPFRouter {
 		ssh.disconnect();
 	}
 	
-	public Map<String, String> getInterfaceNetwork() throws IOException{
+	/**
+	 * Ask the router to return descriptions of interfaces, that is the name of the interface and
+	 * the network address of each interface. This consider only IPv4 addresses to return to the user.
+	 * @return A Map which keys are the name of the interfaces and the value is the address of the network
+	 * the interface is attached to.
+	 * @throws IOException In case of sending command error
+	 */
+	public List<Pair<String, String>> getInterfaceNetwork() throws IOException{
 		if (!this.isConnected()) {
 			throw new ConnectionException("Router is not connected");
 		}
 		enableRootPrompt();
-		
+		String out = exp.sendLine("show ip interface brief")
+								  .expect(contains(hostname + ROOTPROMPT))
+								  .getBefore();
+		String ifaceDesc = out.substring(out.indexOf("Interface"), out.length() - 1);
+		Matcher ifNetMatch = Pattern.compile("^(.*\\d/\\d)\\s+((\\d+\\.){3}(\\d+))").matcher(ifaceDesc);
+		List<Pair<String, String>> ifaceList =  new LinkedList<>();
+		while(ifNetMatch.find()) {
+			Pair<String, String> pair = new Pair<String, String>(ifNetMatch.group(1), ifNetMatch.group(2));
+			ifaceList.add(pair);
+		}
 		disableRootPrompt();
-		return null;
+		return ifaceList;
 	}
 	
 	/**
@@ -200,12 +219,12 @@ public class OSPFRouter {
 		if (!this.isConfT) {
 			return;
 		}
-		exp.sendLine("end").expect(exact(hostname + ROOTPROMPT));
+		exp.sendLine("end").expect(contains(hostname + ROOTPROMPT));
 		this.isConfT = false;
 	}
 	
 	/**
-	 * 
+	 * Send the list commands to the router
 	 * @param commands
 	 * @throws IOException 
 	 */
@@ -217,7 +236,7 @@ public class OSPFRouter {
 			setConfigureTerminal();
 		}
 		for (String cmd : commands) {
-			
+			exp.sendLine(cmd).expect(contains("config"));
 		}
 		unsetConfigureTerminal();
 	}
@@ -227,12 +246,10 @@ public class OSPFRouter {
 			throw new ConnectionException("Router is not connected");
 		}
 		enableRootPrompt();
-		String out = exp.sendLine("show running-config")
+		String conf = exp.sendLine("show running-config")
 					     .expect(regexp(hostname + ROOTPROMPT))
 					     .getBefore();
 		disableRootPrompt();
-		String conf = out.replaceAll("^!.*$", "");
 		return conf;
-		
 	}
 }

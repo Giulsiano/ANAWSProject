@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.util.Map;
 
 //main del tool
 public class Tool {
@@ -70,7 +71,7 @@ public class Tool {
 			case 6:
 				OSPFRouter router = new OSPFRouter("192.168.0.254");
 				router.connect("cisco", "cisco");
-				String conf = router.getRunningConfig();
+				Map<String, String> conf = router.getInterfaceNetwork();
 				router.disconnect();
 				System.out.println(conf);
 				break;
