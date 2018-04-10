@@ -14,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,7 +28,6 @@ import javafx.util.Pair;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.common.IOUtils;
 import net.schmizz.sshj.common.LoggerFactory;
-import net.schmizz.sshj.common.SSHException;
 import net.schmizz.sshj.common.StreamCopier;
 import net.schmizz.sshj.connection.ConnectionException;
 import net.schmizz.sshj.connection.channel.direct.Session;
@@ -38,10 +36,6 @@ import net.schmizz.sshj.transport.TransportException;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.sf.expectit.Expect;
 import net.sf.expectit.ExpectBuilder;
-import net.sf.expectit.MultiResult;
-import net.sf.expectit.Result;
-
-import static net.sf.expectit.matcher.Matchers.*;
 
 public class Functions{
 	
@@ -650,7 +644,7 @@ public class Functions{
 	 * @param ip	The IP address of the router on which to apply the standard class/classes 
 	 * @throws IOException If a connection error occours
 	 */
-	// TODO make it public again afrer testing it
+	// TODO make it private again afrer testing it
 	public void confStdDF(String ip) throws IOException {
 		List<String> selectedClasses = confStdMenu();
 		
@@ -745,26 +739,12 @@ public class Functions{
 	}
 	
 
-	/**
-	 * Return the list of all interfaces configured in the router. This functions assumes you have just connected
-	 * to the router and you are on a root prompt (not configure terminal or similar).
-	 * @param expect The expect object required to send commands and filter output
-	 * @return The list of all interfaces of the router, it doesn't discriminate from up or down ones
-	 * @throws IOException 
-	 */
-	private List<String> getRouterInterfaces(Expect expect) throws IOException{
-		List<String> ifaces = new ArrayList<>();
-		
-		// We assume we are on root prompt on the router
-		expect.sendLine("terminal length 0");
-		expect.sendLine("show running-config");
-		String output = expect.expect(regexp("#")).getBefore();
-		Pattern pattern = Pattern.compile("interface (.*)", Pattern.MULTILINE);
-		Matcher match = pattern.matcher(output);
-		while (match.find()) {
-			ifaces.add(match.group());
-		}
-		return ifaces;
+	public boolean testIsBorderRouter(String ip) throws IOException {
+		OSPFRouter router = new OSPFRouter(ip);
+		router.connect(USER, PASSWORD);
+		boolean isRouterBR = router.isBorderRouter();
+		router.disconnect();
+		return isRouterBR;
 	}
 	
 	

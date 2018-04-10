@@ -1,5 +1,4 @@
 import java.io.IOException;
-import java.util.Map;
 
 //main del tool
 public class Tool {
@@ -69,7 +68,9 @@ public class Tool {
 				break;
 			
 			case 6:
-				func.confStdDF("192.168.0.254");
+				boolean beTrue = func.testIsBorderRouter("192.168.0.254");
+				boolean beFalse = func.testIsBorderRouter("10.0.7.2");
+				System.out.println(!(beTrue && beFalse));
 				break;
 				
 			default:

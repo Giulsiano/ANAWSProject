@@ -152,7 +152,8 @@ public class OSPFRouter {
 								  .expect(contains(hostname + ROOTPROMPT))
 								  .getBefore();
 		String ifaceDesc = out.substring(out.indexOf("Interface"), out.length());
-		Matcher ifNetMatch = Pattern.compile("^(.*\\d/\\d)\\s+((\\d+\\.){3}(\\d+))", Pattern.MULTILINE).matcher(ifaceDesc);
+		Matcher ifNetMatch = Pattern.compile("^(.*\\d/\\d)\\s+((\\d+\\.){3}(\\d+))", Pattern.MULTILINE)
+									.matcher(ifaceDesc);
 		List<Pair<String, String>> ifaceList =  new LinkedList<>();
 		while(ifNetMatch.find()) {
 			Pair<String, String> pair = new Pair<String, String>(ifNetMatch.group(1), ifNetMatch.group(2));
@@ -234,6 +235,27 @@ public class OSPFRouter {
 			exp.sendLine(cmd).expect(contains("config"));
 		}
 		unsetConfigureTerminal();
+	}
+	
+	/**
+	 * Ask the router if it is a border router or not
+	 * @return true if it is a border router
+	 * @throws IOException
+	 */
+	public boolean isBorderRouter() throws IOException {
+		if (!this.isConnected()) {
+			throw new ConnectionException("Router is not connected");
+		}
+		if (!this.isRoot()) {
+			enableRootPrompt();
+		}
+		// Get the output, extract all the ip address and check them against the list of interfaces of
+		// this router
+		String out = exp.sendLine("show ip ospf")
+				        .expect(contains(hostname + ROOTPROMPT))
+				        .getBefore();
+		disableRootPrompt();
+		return out.contains("It is an area border router");
 	}
 	
 	/**
