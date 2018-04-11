@@ -251,7 +251,7 @@ public class OSPFRouter {
 		}
 		// Get the output, extract all the ip address and check them against the list of interfaces of
 		// this router
-		String out = exp.sendLine("show ip ospf")
+		String out = exp.sendLine("show ip ospf | inc It is an")
 				        .expect(contains(hostname + ROOTPROMPT))
 				        .getBefore();
 		disableRootPrompt();

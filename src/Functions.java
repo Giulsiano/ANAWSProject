@@ -467,9 +467,10 @@ public class Functions{
 			return;
 		}
 		// Print router list and make the user to choose
-		System.out.println("List of routers:");
+		System.out.println("\n---   List of available routers   ---");
+		System.out.println("Hostname\tIP address\tABR?");
 		for(String[] desc: routerDescription) {
-			System.out.println(desc[0] + "\t" + desc[1] + "\t" + desc[2]);
+			System.out.println(desc[0] + "\t\t" + desc[1] + "\t" + desc[2]);
 		}
 		System.out.println();
 	}
