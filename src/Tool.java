@@ -1,4 +1,8 @@
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+
+import javafx.util.Pair;
 
 //main del tool
 public class Tool {
@@ -68,9 +72,10 @@ public class Tool {
 				break;
 			
 			case 6:
-				boolean beTrue = func.testIsBorderRouter("192.168.0.254");
-				boolean beFalse = func.testIsBorderRouter("10.0.7.2");
-				System.out.println(!(beTrue && beFalse));
+				List<String> classes = new LinkedList<String>();
+				List<String> commands = func.getStdClassConfigureCommands(
+													new Pair<String, String>("Ethernet1/1", "192.168.0.100"), 
+													classes);
 				break;
 				
 			default:

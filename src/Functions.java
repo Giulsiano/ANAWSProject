@@ -461,7 +461,9 @@ public class Functions{
 	
 	private void printRouterList() {
 		System.out.println("Getting router list");
-		routerDescription = getRouterDesc();
+		if(routerDescription == null) {
+			routerDescription = getRouterDesc();
+		}
 		if (routerDescription == null) {
 			System.err.println("Error retrieving list of router");
 			return;
@@ -579,6 +581,7 @@ public class Functions{
 
 	private List<String> getRouterAddresses(){
 		List<String> routerAddrs = new LinkedList<>();
+		if (routerDescription ==  null) routerDescription = getRouterDesc();
 		for (String[] desc : routerDescription) {
 			routerAddrs.add(desc[1]);
 		}
@@ -682,15 +685,21 @@ public class Functions{
 		String input;
 		int ifaceListSize = ifaceList.size();
 		do {// At least there is an interface at this point, the one with ip as address
-			System.out.printf("Choose the interface to apply the diffserv" +
+			System.out.printf("Choose the interface (or interfaces) to apply the diffserv" +
 							  (selectedClasses.size() > 1 ? " classes" : " class") +
 							   " (1-%d): ", ifaceListSize);
 			input = System.console().readLine();
-		}while (!isInsideBound(input, 1, ifaceListSize));
-		List<String> commands = getStdClassConfigureCommands(ifaceList.get(Integer.parseInt(input)),
-															 selectedClasses); 
+		}while (!isCommaSeparated(input));
+		List<String> commands = null;
 		router.connect(USER, PASSWORD);
-		router.configureRouter(commands);
+		for(Integer ifaceNum: getIntValues(input)) {
+			int selectedIface = ifaceNum.intValue() - 1;
+			if (selectedIface >= 0 && selectedIface < ifaceListSize) {
+				commands = getStdClassConfigureCommands(ifaceList.get(selectedIface),
+													 selectedClasses);
+			}
+			router.configureRouter(commands);
+		}
 		router.disconnect();
 	}
 	
@@ -704,7 +713,7 @@ public class Functions{
 		return Files.readAllLines(Paths.get(CLASSDIR, className));
 	}
 	
-	private List<String> getStdClassConfigureCommands(Pair<String, String> pair, List<String> classes) {
+	public List<String> getStdClassConfigureCommands(Pair<String, String> pair, List<String> classes) {
 		List<String> commands = new LinkedList<>();
 		int accessListNum = 101;
 		
@@ -733,10 +742,8 @@ public class Functions{
 			accessListNum ++;
 		}
 		
-		// Redo the same loop for setting policy
-		String ifaceName = pair.getKey();
-		
 		// Set the policy name, i.e. Et11 
+		String ifaceName = pair.getKey();
 		String policyName = (ifaceName.substring(0, 2) + 
 							 ifaceName.substring(ifaceName.length() - 3, ifaceName.length()))
 							.replaceAll("/","");
@@ -751,10 +758,21 @@ public class Functions{
 				return null;
 			}
 		}
+		
+		// Set service policy to the correct interface
+		System.out.println("Is this policy applied to input traffic? (yes/no):");
+		String input;
+		do {
+			input = System.console().readLine();
+		} while (!input.equalsIgnoreCase("yes") && !input.equalsIgnoreCase("no"));
+		commands.add("interface " + ifaceName);
+		commands.add("service-policy " 
+					+ (input.equalsIgnoreCase("yes") ? "input " : "output ") 
+					+ policyName);
+		commands.add("exit");
 		return commands;
 	}
 	
-
 	public boolean testIsBorderRouter(String ip) throws IOException {
 		OSPFRouter router = new OSPFRouter(ip);
 		router.connect(USER, PASSWORD);
