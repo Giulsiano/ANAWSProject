@@ -37,6 +37,7 @@ public class OSPFRouter {
 	private boolean isConnected;
 	private boolean isRoot;
 	private boolean isConfT;
+	private Boolean isBorderRouter;
 
 	public static final String ROOTPROMPT = "#";
 	public static final String PROMPT = ">";
@@ -50,6 +51,7 @@ public class OSPFRouter {
 	public OSPFRouter(String ip) {
 		this.isConnected = this.isRoot = false;
 		this.isRoot = this.isConfT = false;
+		this.isBorderRouter = null;	// Null before running isBorderRouter method, then it is true or false
 		this.ip = ip;
 	}
 	
@@ -217,6 +219,7 @@ public class OSPFRouter {
 		}
 		exp.sendLine("end").expect(contains(hostname + ROOTPROMPT));
 		this.isConfT = false;
+		disableRootPrompt();
 	}
 	
 	/**
@@ -246,16 +249,19 @@ public class OSPFRouter {
 		if (!this.isConnected()) {
 			throw new ConnectionException("Router is not connected");
 		}
-		if (!this.isRoot()) {
-			enableRootPrompt();
+		if (this.isBorderRouter == null) {
+			if (!this.isRoot()) {
+				enableRootPrompt();
+			}
+			// Get the output, extract all the ip address and check them against the list of interfaces of
+			// this router
+			String out = exp.sendLine("show ip ospf | inc It is an")
+					        .expect(contains(hostname + ROOTPROMPT))
+					        .getBefore();
+			disableRootPrompt();
+			this.isBorderRouter = out.contains("It is an area border router");
 		}
-		// Get the output, extract all the ip address and check them against the list of interfaces of
-		// this router
-		String out = exp.sendLine("show ip ospf | inc It is an")
-				        .expect(contains(hostname + ROOTPROMPT))
-				        .getBefore();
-		disableRootPrompt();
-		return out.contains("It is an area border router");
+		return this.isBorderRouter.booleanValue();
 	}
 	
 	/**
