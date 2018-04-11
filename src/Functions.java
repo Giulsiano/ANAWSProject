@@ -40,7 +40,7 @@ import net.sf.expectit.ExpectBuilder;
 public class Functions{
 	
 	public String userInput = null;
-	public List<String> routers;
+	public List<String[]> routerDescription;
 	public File[] fileList;
 	static final String USER = "cisco";
 	static final String PASSWORD = "cisco";
@@ -50,10 +50,6 @@ public class Functions{
 	private String topology;
 	private Runtime rt;
 	private Map<String, Integer> dscpValues;
-	private static final String PROMPT = ">";
-	private static final String ROOTPROMPT = "#";
-	private static final String PWDPROMPT = "Password:";
-	private final int KB = 1024;
 	
     public Functions() {
     	rt = Runtime.getRuntime();
@@ -97,7 +93,6 @@ public class Functions{
 				}
 			}
 		} catch (SocketException e) {
-			// TODO Auto-generated catch block
 			System.err.printf("Error caught initializing Functions:\n%s\n%s", e.getClass().getName(), e.getMessage());
 			System.exit(1);
 		}
@@ -106,23 +101,21 @@ public class Functions{
 //*******************************************************************************************************************************************    
     
     public void connectToRouter() throws IOException {
-		
+		String userInput = null;
 		printRouterList();
-		while(userInput == null) {
+		boolean isValidInput = false;
+		do {
 			System.out.println("Choose the router IP of the list to which you want to connect to:");
 			System.out.println("Enter .exit to return back");
 			userInput = System.console().readLine();
 			if(userInput.equals(".exit"))
 				return;
-			if (!routers.contains(userInput)) {
-				userInput = null;
-			}
-		}
+			isValidInput = getRouterAddresses().contains(userInput);
+		} while (isValidInput == false);
 		OSPFRouter router = new OSPFRouter(userInput);
 		router.connect(USER, PASSWORD);
 		Expect exp = router.getExpectIt();
 		try {
-			String userInput;
 			do {
 				userInput = System.console().readLine();
 				exp.sendLine(userInput);
@@ -186,38 +179,36 @@ public class Functions{
 			if(!input2.equals("one") && !input2.equals("all"))
 				input2 = null;
 		}
-		
-       //Checking input1 and input2 content
-		
+				
+		//Checking input1 and input2 content		
+		List<String> routerAddrs = getRouterAddresses();
 		if(input1.equals("std") && input2.equals("one")) {
 			printRouterList();
 			while(addr == null) {
 				System.out.print("Choose the router: ");
 				addr = System.console().readLine();
-				if(!routers.contains(addr)) 
+				if(!routerAddrs.contains(addr)) 
 					addr = null;
 			}
 			confStdDF(addr);
 		}
 		else if (input1.equals("std") && input2.equals("all")) {
-			System.out.println("\n" + "Getting router list");
-			routers = getRouterList();
-			if (routers == null) {
+			System.out.println("\nGetting router list");
+			routerDescription = getRouterDesc();
+			if (routerDescription == null) {
 				System.err.println("Error retrieving list of router");
 				return;
 			}
-			
-			for(String ip: routers) {
-				confStdDF(ip);
+			for(String[] desc: routerDescription) {
+				confStdDF(desc[1]);
 			}
-			
 		}
 		else if (input1.equals("new") && input2.equals("one")) {
 			printRouterList();
 			while(addr == null) {
 				System.out.print("Choose the router: ");
 				addr = System.console().readLine();
-				if(!routers.contains(addr)) 
+				if(!routerAddrs.contains(addr)) 
 					addr = null;
 			}
 			printNewClasses();
@@ -247,14 +238,14 @@ public class Functions{
 				defineNewClass(true, addr);
 			else {*/
 				System.out.println("\n" + "Getting router list");
-				routers = getRouterList();
-				if (routers == null) {
+				routerDescription = getRouterDesc();
+				if (routerDescription == null) {
 					System.err.println("Error retrieving list of router");
 					return;
 				}
 
-				for(String ip: routers) 
-					applyNewClass(nameFromPosition(pos), ip);
+				for(String[] desc: routerDescription) 
+					applyNewClass(nameFromPosition(pos), desc[1]);
 			//}
 			
 			
@@ -377,37 +368,55 @@ public class Functions{
 		while(userInput == null) {
 			System.out.println("Choose the router IP of the list to which you want the running-conf:");
 			userInput = System.console().readLine();
-			if (!routers.contains(userInput)) {
+			if (!getRouterAddresses().contains(userInput)) {
 				userInput = null;
 			}
 		}
 		OSPFRouter router = new OSPFRouter(userInput);
 		router.connect(USER, PASSWORD);
-		System.out.println(router.getRunningConfig());
+		String conf = router.getRunningConfig();
 		router.disconnect();
+		System.out.println(conf);
 	}
 	
 //******************************************************************************************************************************************* 
 	
 	/**
-	 * Get the list of the router id from the ospfd daemon
-	 * @return List of router id. They are the IP ssh will connect to or null if the command fails.
+	 * Get the description of the router. It includes the hostname, the router ID and if the router is 
+	 * an Area Border ROuter or not.
+	 * @return List of router descriptions. Return null if the connection to all the router has failed.
 	 */
-	private List<String> getRouterList(){
+	private List<String[]> getRouterDesc(){
 		try {
-			List<String> routers = null;
+			List<String[]> descriptions = new LinkedList<>();
+			List<String> addresses = null;
 			Runtime rt = Runtime.getRuntime();
-			while(routers == null) {
+			while(addresses == null) {
 				Process vtysh = rt.exec(VTYCOMMAND);
 				if (vtysh == null) {
 					System.err.println("Error in command string");
 					return null;
 				}
 				else {
-					routers = getRouterIds(vtysh.getInputStream());					
+					addresses = getRouterIds(vtysh.getInputStream());
+					addresses.forEach(ip -> {
+						String[] routerDesc = new String[3];	// hostname, ip and if ABR or not
+						OSPFRouter router = new OSPFRouter(ip);
+						try {
+							router.connect(USER, PASSWORD);
+							routerDesc[0] = router.getHostname();
+							routerDesc[1] = ip;
+							routerDesc[2] = router.isBorderRouter() ? "ABR" : "";
+							router.disconnect();
+							descriptions.add(routerDesc);
+						} 
+						catch (IOException e) {
+							System.err.println("Error connecting to " + ip);
+						}
+					});
 				}
 			}
-			return routers;
+			return descriptions;
 		}
 		catch (Exception e) {
 			System.err.printf("Exception caught: %s\n%s\n", e.getClass().getName(), e.getMessage());
@@ -452,17 +461,17 @@ public class Functions{
 	
 	private void printRouterList() {
 		System.out.println("Getting router list");
-		routers = getRouterList();
-		if (routers == null) {
+		routerDescription = getRouterDesc();
+		if (routerDescription == null) {
 			System.err.println("Error retrieving list of router");
 			return;
 		}
 		// Print router list and make the user to choose
 		System.out.println("List of routers:");
-		for(String ip: routers) {
-			System.out.println(ip);
+		for(String[] desc: routerDescription) {
+			System.out.println(desc[0] + "\t" + desc[1] + "\t" + desc[2]);
 		}
-		System.out.println("");
+		System.out.println();
 	}
 	
 //******************************************************************************************************************************************* 	
@@ -563,11 +572,18 @@ public class Functions{
 				ssh.disconnect();
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
+	private List<String> getRouterAddresses(){
+		List<String> routerAddrs = new LinkedList<>();
+		for (String[] desc : routerDescription) {
+			routerAddrs.add(desc[1]);
+		}
+		return routerAddrs;
+	}
+	
 	/**
 	 * Return a list of all the integers contained in s
 	 * @param s A String that contains some integers
@@ -644,8 +660,7 @@ public class Functions{
 	 * @param ip	The IP address of the router on which to apply the standard class/classes 
 	 * @throws IOException If a connection error occours
 	 */
-	// TODO make it private again afrer testing it
-	public void confStdDF(String ip) throws IOException {
+	private void confStdDF(String ip) throws IOException {
 		List<String> selectedClasses = confStdMenu();
 		
 		// Connect to the router to retrieve only the interface network informations. This is needed because 
