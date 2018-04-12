@@ -186,7 +186,7 @@ public class Functions{
 		if(input1.equals("std") && input2.equals("one")) {
 			printRouterList();
 			while(addr == null) {
-				System.out.print("Choose the router: ");
+				System.out.print("Choose the router (enter the IP address): ");
 				addr = System.console().readLine();
 				if(!routerAddrs.contains(addr)) 
 					addr = null;
@@ -207,7 +207,7 @@ public class Functions{
 		else if (input1.equals("new") && input2.equals("one")) {
 			printRouterList();
 			while(addr == null) {
-				System.out.print("Choose the router: ");
+				System.out.print("Choose the router (enter the IP address): ");
 				addr = System.console().readLine();
 				if(!routerAddrs.contains(addr)) 
 					addr = null;
@@ -423,6 +423,32 @@ public class Functions{
 		}
 	}
 	
+	// first of all : stupid version
+	private String getRouterHostname(String ip) {
+		List<String> routerHostname = new LinkedList<>();
+		String name = null;
+		if (routerDescription ==  null) routerDescription = getRouterDesc();
+		for (String[] desc : routerDescription) {
+			routerHostname.add(desc[1]);
+			if(desc[1].equals(ip)) {  
+				name = desc[0]; 
+				break;
+			}
+		}
+		return name;
+	}
+	
+	
+	/*
+	 * private List<String> getRouterAddresses(){
+		List<String> routerAddrs = new LinkedList<>();
+		if (routerDescription ==  null) routerDescription = getRouterDesc();
+		for (String[] desc : routerDescription) {
+			routerAddrs.add(desc[1]);
+		}
+		return routerAddrs;
+	}
+	 */
 //******************************************************************************************************************************************* 
 	
 	/** 
@@ -515,7 +541,7 @@ public class Functions{
 //*******************************************************************************************************************************************
 	
 	public void printNewClasses() {
-		System.out.println("\n" +"List of available classes:\n");
+		System.out.println("\n ( " + " List of available classes:\n");
 		File curDir = new File(NEWCLASSDIR);
 		fileList = curDir.listFiles();
 		for(int i = 0; i<fileList.length; i++) {
@@ -637,7 +663,7 @@ public class Functions{
 		router.disconnect();
 		
 		// Ask the user all the parameters needed for the conf serv to be set up.
-		System.out.println("The following is the list of interfaces of " + ip);
+		System.out.println("The following is the list of interfaces of " + ip + " ( " + getRouterHostname(ip) + " ) ");
 		System.out.println("#  Interface\t\tAddress");
 		int i = 1;
 		for(Pair<String, String> iface : ifaceList) {
@@ -768,20 +794,32 @@ public class Functions{
 		return isRouterBR;
 	}
 	
+	private boolean checkClass(String input, int min, int max) {
+		boolean okstd = true;
+		String[] splits = null;
+		if(input.contains(",")) {
+			splits = input.split(",");
+			for(int i = 0; i < splits.length; i++)
+				if(Integer.parseInt(splits[i]) > max || Integer.parseInt(splits[i]) < min) okstd = false;
+		}
+		else if(Integer.parseInt(input) > max || Integer.parseInt(input) < min) okstd = false;
+		return okstd;
+	}
 	
 	private List<String> confMenu(boolean std) { 
 		List<String> cl = new ArrayList<>();
 		if(std) {
-			System.out.println("Choose which class or classes to apply: \n"
-					+ "1- VoIP\n"
-					+ "2- Video\n"
-					+ "3- Web\n"
-					+ "4- Excess\n"
-					+ "You can insert a comma separated list if you want to apply more than one class");
+			
 			String userInput;
 			do {			
+				System.out.println("Choose which class or classes to apply: \n"
+						+ "1- VoIP\n"
+						+ "2- Video\n"
+						+ "3- Web\n"
+						+ "4- Excess\n"
+						+ "You can insert a comma separated list if you want to apply more than one class");
 				userInput = System.console().readLine();
-			} while (!isCommaSeparated(userInput));
+			} while (!isCommaSeparated(userInput) || !checkClass(userInput, 1, 4));
 
 			for (Integer value : getIntValues(userInput)) {
 				switch (value.intValue()) {
@@ -811,13 +849,15 @@ public class Functions{
 			}
 		}
 		else {
-			printNewClasses();
-			System.out.println("Choose which class or classes to apply: \n");
-			System.out.println("You can insert a comma separated list if you want to apply more than one class");
+			
 			String userInput;
-			do {			
+			do {		
+				System.out.println("Choose which class or classes to apply: ");
+				printNewClasses();
+				System.out.println("You can insert a comma separated list if you want to apply more than one class");
 				userInput = System.console().readLine();
-			} while (!isCommaSeparated(userInput));
+				
+			} while (!isCommaSeparated(userInput) || !checkClass(userInput, 1, fileList.length));
 			for (Integer value : getIntValues(userInput)) {
 				if(!cl.contains(fileList[value-1].getName()))
 					cl.add(fileList[value-1].getName());
