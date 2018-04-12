@@ -252,6 +252,30 @@ public class Functions{
 		}
 	}
 	
+	private List<String> getRouterHostnamesFromDesc (){
+		return sliceRouterDescription(0);
+	}
+	
+	private List<String> getRouterAddressesFromDesc (){
+		return sliceRouterDescription(1);
+	}
+	
+	/**
+	 * @param index Which is the index of the String array to be retrieved from the 
+	 * routerDescription list
+	 * @return a List of String from the routerDescription list of array of strings or an empty list
+	 * if routerDescription is null 
+	 */
+	private List<String> sliceRouterDescription (int index) {
+		List<String> slice = new LinkedList<>();
+		if (routerDescription != null) {
+			routerDescription.forEach(array -> {
+				slice.add(array[index]);
+			});
+		}
+		return slice;
+ 	}
+	
 //******************************************************************************************************************************************* 	
 	
 	public String defineNewClass(boolean calledByFunction, String ip) {
@@ -480,7 +504,7 @@ public class Functions{
 //******************************************************************************************************************************************* 	
 	
 	/**
-	 *  Redirect output stream in order to send user's command to the router
+	 * Redirect output stream in order to send user's command to the router
 	 * @param sh
 	 * @param ses
 	 * @throws IOException
