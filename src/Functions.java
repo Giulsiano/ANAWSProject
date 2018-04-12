@@ -45,7 +45,8 @@ public class Functions{
 	static final String USER = "cisco";
 	static final String PASSWORD = "cisco";
 	static final String[] VTYCOMMAND = {"/usr/bin/vtysh", "-d", "ospfd", "-c", "show ip ospf database"};
-	static final String CLASSDIR = "../classes/";
+	static final String STDCLASSDIR = "../classes/std/";
+	static final String NEWCLASSDIR = "../classes/new/";
 	private Set<String> localAddress;
 	private String topology;
 	private Runtime rt;
@@ -190,7 +191,7 @@ public class Functions{
 				if(!routerAddrs.contains(addr)) 
 					addr = null;
 			}
-			confStdDF(addr);
+			confDF(addr, true);
 		}
 		else if (input1.equals("std") && input2.equals("all")) {
 			System.out.println("\nGetting router list");
@@ -200,7 +201,7 @@ public class Functions{
 				return;
 			}
 			for(String[] desc: routerDescription) {
-				confStdDF(desc[1]);
+				confDF(desc[1], true);
 			}
 		}
 		else if (input1.equals("new") && input2.equals("one")) {
@@ -211,44 +212,18 @@ public class Functions{
 				if(!routerAddrs.contains(addr)) 
 					addr = null;
 			}
-			printNewClasses();
-			while(filepos == null) {
-				System.out.print("Waiting for a choise: ");
-				filepos = System.console().readLine();
-				pos = Integer.parseInt(filepos);
-				if(pos > fileList.length-1)
-					filepos = null;
-			}
-			/*if(filepos.equals("new")) 
-				defineNewClass(true, addr);
-			else */
-				applyNewClass(nameFromPosition(pos), addr);
-			
+			confDF(addr, false);
 		}
 		else if (input1.equals("new") && input2.equals("all")) {
-			printNewClasses();
-			while(filepos == null) {
-				System.out.print("Waiting for a choise: ");
-				filepos = System.console().readLine();
-				pos = Integer.parseInt(filepos);
-				if(pos > fileList.length-1)
-					filepos = null;
+			System.out.println("\nGetting router list");
+			routerDescription = getRouterDesc();
+			if (routerDescription == null) {
+				System.err.println("Error retrieving list of router");
+				return;
 			}
-			/*if(filepos.equals("new")) 
-				defineNewClass(true, addr);
-			else {*/
-				System.out.println("\n" + "Getting router list");
-				routerDescription = getRouterDesc();
-				if (routerDescription == null) {
-					System.err.println("Error retrieving list of router");
-					return;
-				}
-
-				for(String[] desc: routerDescription) 
-					applyNewClass(nameFromPosition(pos), desc[1]);
-			//}
-			
-			
+			for(String[] desc: routerDescription) {
+				confDF(desc[1], false);
+			}
 		}
 	}
 	
@@ -289,7 +264,7 @@ public class Functions{
 		if(filename.equals(".exit"))
 			return null;
 		try {
-			PrintWriter classFile = new PrintWriter(new File(CLASSDIR + filename));
+			PrintWriter classFile = new PrintWriter(new File(NEWCLASSDIR + filename));
 			classFile.println("class " + filename);
 			System.out.println("Do you prefer to be guided through the class definition?\n" 
 								 + "yes - the wizard will allow you to define basic features such as shaping,\n"
@@ -541,10 +516,10 @@ public class Functions{
 	
 	public void printNewClasses() {
 		System.out.println("\n" +"List of available classes:\n");
-		File curDir = new File(CLASSDIR);
+		File curDir = new File(NEWCLASSDIR);
 		fileList = curDir.listFiles();
 		for(int i = 0; i<fileList.length; i++) {
-			System.out.println(i + ": " + fileList[i].getName());
+			System.out.println(i+1 + ": " + fileList[i].getName());
 		}
 		//System.out.println("new: create new one\n");
 	}
@@ -555,7 +530,7 @@ public class Functions{
 				+ "-Video\n"
 				+ "-Web");
 		System.out.println("ADMIN DEFINED CLASSES:");
-		File curDir = new File(CLASSDIR);
+		File curDir = new File(NEWCLASSDIR);
 		fileList = curDir.listFiles();
 		for(int i = 0; i<fileList.length; i++) {
 			System.out.println("-"+fileList[i].getName());
@@ -564,44 +539,6 @@ public class Functions{
 	
 //*******************************************************************************************************************************************	
 	
-	private void applyNewClass(String file, String ip) {
-		
-		System.out.println("Applying new class TEST");
-		try {
-			SSHClient ssh = new SSHClient();
-			ssh.addHostKeyVerifier(new PromiscuousVerifier());
-			try {
-				ssh.connect(ip);
-				ssh.authPassword(USER, PASSWORD);
-				Session session = ssh.startSession(); 
-				Shell shell = session.startShell();
-				redirect(shell, session, true);;
-				Expect expect = new ExpectBuilder()
-		                .withOutput(shell.getOutputStream())
-		                .withInputs(shell.getInputStream(), shell.getErrorStream())
-		                .build();
-			    try {	
-			    	execute(expect, "enable");
-			    	execute(expect, "cisco");
-			    	execute(expect, "configure terminal");
-					BufferedReader br = new BufferedReader(new FileReader(CLASSDIR + file));
-					for(String line; (line = br.readLine()) != null; ) 
-							execute(expect, line);
-			    } finally {
-			    	execute(expect, "disable");
-			    	execute(expect, "exit");
-			    	System.out.println("Class applied successfully!");
-				    expect.close();
-					session.close();
-				} 
-			}
-			finally {
-				ssh.disconnect();
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
 
 	private List<String> getRouterAddresses(){
 		List<String> routerAddrs = new LinkedList<>();
@@ -627,7 +564,7 @@ public class Functions{
 	}
 	
 	public void verifyNewClass(String classFileName) throws IOException {
-		Path classPath = Paths.get(CLASSDIR, classFileName);
+		Path classPath = Paths.get(NEWCLASSDIR, classFileName);
 		List<String> rows = Files.readAllLines(classPath);
 		boolean saveFile = false;
 		System.out.println("The content of the class " + classFileName + " is the following:\n");
@@ -688,8 +625,9 @@ public class Functions{
 	 * @param ip	The IP address of the router on which to apply the standard class/classes 
 	 * @throws IOException If a connection error occours
 	 */
-	private void confStdDF(String ip) throws IOException {
-		List<String> selectedClasses = confStdMenu();
+	private void confDF(String ip, boolean std) throws IOException {
+		boolean isBR;
+		List<String> selectedClasses = confMenu(std);
 		
 		// Connect to the router to retrieve only the interface network informations. This is needed because 
 		// the configuration process can take longer time than the ssh disconnection timeout.
@@ -716,11 +654,12 @@ public class Functions{
 		}while (!isCommaSeparated(input));
 		List<String> commands = null;
 		router.connect(USER, PASSWORD);
+		isBR = router.isBorderRouter();
 		for(Integer ifaceNum: getIntValues(input)) {
 			int selectedIface = ifaceNum.intValue() - 1;
 			if (selectedIface >= 0 && selectedIface < ifaceListSize) {
-				commands = getStdClassConfigureCommands(ifaceList.get(selectedIface),
-													 selectedClasses);
+				commands = getClassConfigureCommands(ifaceList.get(selectedIface),
+													 selectedClasses, isBR, std);
 			}
 			router.configureRouter(commands);
 		}
@@ -733,37 +672,54 @@ public class Functions{
 	 * @return	List of commands written into the file
 	 * @throws IOException If reading the file makes some problems
 	 */
-	private List<String> readClassCommands(String className) throws IOException{
-		return Files.readAllLines(Paths.get(CLASSDIR, className));
+	private List<String> readClassCommands(String className, boolean std) throws IOException{
+		if(std)
+			return Files.readAllLines(Paths.get(STDCLASSDIR, className));
+		else
+			return Files.readAllLines(Paths.get(NEWCLASSDIR, className));
 	}
 	
-	public List<String> getStdClassConfigureCommands(Pair<String, String> pair, List<String> classes) {
+	public List<String> getClassConfigureCommands(Pair<String, String> pair, List<String> classes, boolean br, boolean std) {
 		List<String> commands = new LinkedList<>();
 		int accessListNum = 101;
 		
-		// Define different access lists, one for each standard class
-		for (String dsClass : classes) {
-			switch (dsClass) {
-				case "WEB":
-					commands.add("access-list " + accessListNum + " permit tcp any any range www 81");
-					break;
-					
-				case "VIDEO":
-				case "VOIP":
-					commands.add("access-list " + accessListNum + " permit udp any any");
-					break;
-					
-				case "EXCESS":
-					commands.add("access-list " + accessListNum + " permit any");
-					break;
-					
-				default:
-					throw new IllegalArgumentException("no standard class called " + dsClass);
+		if(br) {
+			// Define different access lists, one for each standard class
+			for (String dsClass : classes) {
+				if(std) {
+					switch (dsClass) {
+						case "WEB":
+							commands.add("access-list " + accessListNum + " permit tcp any any range www 81");
+							break;
+						
+						case "VIDEO":
+						case "VOIP":
+							commands.add("access-list " + accessListNum + " permit udp any any");
+							break;
+						
+						case "EXCESS":
+							commands.add("access-list " + accessListNum + " permit any");
+							break;
+						
+						default:
+							throw new IllegalArgumentException("no standard class called " + dsClass);
+				    }
+				}
+				else {
+					// TCP/UDP choise
+					System.out.println("Do you want to apply TCP protocol? (yes/no):");
+					String input;
+					do {
+						input = System.console().readLine();
+					} while (!input.equalsIgnoreCase("yes") && !input.equalsIgnoreCase("no"));
+					commands.add("access-list " + accessListNum + " permit " + (input.equalsIgnoreCase("yes") ? "tcp " : "udp ") + "any any");
+				}
+				commands.add("class-map match-all " + dsClass);
+				commands.add("match access-group " + accessListNum);
+				commands.add("exit");
+				accessListNum ++;
 			}
-			commands.add("class-map match-all " + dsClass);
-			commands.add("match access-group " + accessListNum);
-			commands.add("exit");
-			accessListNum ++;
+			
 		}
 		
 		// Set the policy name, i.e. Et11 
@@ -774,7 +730,10 @@ public class Functions{
 		commands.add("policy-map " + policyName);
 		for (String dsClass : classes) {
 			try {
-				commands.addAll(readClassCommands(dsClass));
+				if(std)
+					commands.addAll(readClassCommands(dsClass, true));
+				else
+					commands.addAll(readClassCommands(dsClass, false));
 				commands.add("exit");
 			}
 			catch (IOException e) {
@@ -783,17 +742,21 @@ public class Functions{
 			}
 		}
 		
-		// Set service policy to the correct interface
-		System.out.println("Is this policy applied to input traffic? (yes/no):");
-		String input;
-		do {
-			input = System.console().readLine();
-		} while (!input.equalsIgnoreCase("yes") && !input.equalsIgnoreCase("no"));
-		commands.add("interface " + ifaceName);
-		commands.add("service-policy " 
-					+ (input.equalsIgnoreCase("yes") ? "input " : "output ") 
-					+ policyName);
-		commands.add("exit");
+		System.out.println("Setting service-policy...");
+		//set service policy input only for BR
+		if(br){
+			commands.add("interface " + ifaceName);
+			commands.add("service-policy input " + policyName);
+			commands.add("exit");
+		}
+		
+		//set service policy output only for CR
+		else {
+			commands.add("interface " + ifaceName);
+			commands.add("service-policy output " + policyName);
+			commands.add("exit");
+		}
+
 		return commands;
 	}
 	
@@ -806,44 +769,61 @@ public class Functions{
 	}
 	
 	
-	private List<String> confStdMenu() { 
-		System.out.println("Choose which class or classes to apply: \n"
-				+ "1- VoIP\n"
-				+ "2- Video\n"
-				+ "3- Web\n"
-				+ "4- Excess\n"
-				+ "You can insert a comma separated list if you want to apply more than one class");
-		String userInput;
-		do {			
-			userInput = System.console().readLine();
-		} while (!isCommaSeparated(userInput));
+	private List<String> confMenu(boolean std) { 
 		List<String> cl = new ArrayList<>();
-		for (Integer value : getIntValues(userInput)) {
-			switch (value.intValue()) {
-				case 1:
-					if (!cl.contains("VOIP")) {
-						cl.add("VOIP");
-					}
-					break;
-				case 2:
-					if (!cl.contains("Video")) {
-						cl.add("VIDEO");
-					}
-					break;
-				case 3:
-					if (!cl.contains("WEB")) {
-						cl.add("WEB");
-					}
-					break;
-				case 4:
-					if (!cl.contains("EXCESS")) {
-						cl.add("EXCESS");
-					}
-					break;
-				default:
-					break;
+		if(std) {
+			System.out.println("Choose which class or classes to apply: \n"
+					+ "1- VoIP\n"
+					+ "2- Video\n"
+					+ "3- Web\n"
+					+ "4- Excess\n"
+					+ "You can insert a comma separated list if you want to apply more than one class");
+			String userInput;
+			do {			
+				userInput = System.console().readLine();
+			} while (!isCommaSeparated(userInput));
+
+			for (Integer value : getIntValues(userInput)) {
+				switch (value.intValue()) {
+					case 1:
+						if (!cl.contains("VOIP")) {
+							cl.add("VOIP");
+						}
+						break;
+					case 2:
+						if (!cl.contains("Video")) {
+							cl.add("VIDEO");
+						}
+						break;
+					case 3:
+						if (!cl.contains("WEB")) {
+							cl.add("WEB");
+						}
+						break;
+					case 4:
+						if (!cl.contains("EXCESS")) {
+							cl.add("EXCESS");
+						}
+						break;
+					default:
+						break;
+				}
 			}
 		}
+		else {
+			printNewClasses();
+			System.out.println("Choose which class or classes to apply: \n");
+			System.out.println("You can insert a comma separated list if you want to apply more than one class");
+			String userInput;
+			do {			
+				userInput = System.console().readLine();
+			} while (!isCommaSeparated(userInput));
+			for (Integer value : getIntValues(userInput)) {
+				if(!cl.contains(fileList[value-1].getName()))
+					cl.add(fileList[value-1].getName());
+			}
+		}
+		
 		return cl;
 	}
 	
@@ -853,6 +833,7 @@ public class Functions{
 	    String match = fileList[position].getName();
 		return match;
 	}
+	
 }
 
 

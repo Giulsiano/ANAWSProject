@@ -71,12 +71,12 @@ public class Tool {
 				func.showRunningConf();
 				break;
 			
-			case 6:
+			/*case 6:
 				List<String> classes = new LinkedList<String>();
 				List<String> commands = func.getStdClassConfigureCommands(
 													new Pair<String, String>("Ethernet1/1", "192.168.0.100"), 
 													classes);
-				break;
+				break;*/
 				
 			default:
 				System.out.println("This command does not exist\n");
