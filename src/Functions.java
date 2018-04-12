@@ -541,7 +541,7 @@ public class Functions{
 //*******************************************************************************************************************************************
 	
 	public void printNewClasses() {
-		System.out.println("\n ( " + " List of available classes:\n");
+		System.out.println("\n " + " List of available classes:\n");
 		File curDir = new File(NEWCLASSDIR);
 		fileList = curDir.listFiles();
 		for(int i = 0; i<fileList.length; i++) {
@@ -677,7 +677,7 @@ public class Functions{
 							  (selectedClasses.size() > 1 ? " classes" : " class") +
 							   " (1-%d): ", ifaceListSize);
 			input = System.console().readLine();
-		}while (!isCommaSeparated(input));
+		}while (!isCommaSeparated(input) || !checkClass(input, 1, ifaceListSize));
 		List<String> commands = null;
 		router.connect(USER, PASSWORD);
 		isBR = router.isBorderRouter();
