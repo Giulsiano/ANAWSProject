@@ -267,8 +267,8 @@ public class Functions{
 			System.out.println("IP of the router is not known. Exiting.");
 			System.exit(1);
 		}
-		System.out.printf("Enter name of the new class: \n");
-		System.out.println("Enter .exit to return back");
+		printNewClasses();
+		System.out.println("\nEnter name of the new class or those you want redefine  (.exit to return back): \n");
 		String filename = System.console().readLine();
 		if(filename.equals(".exit"))
 			return null;
@@ -566,7 +566,7 @@ public class Functions{
 		System.out.println("STANDARD CLASSES:\n"
 				+ "-VOIP\n"
 				+ "-VIDEO\n"
-				+ "-WEB"
+				+ "-WEB\n"
 				+ "-EXCESS");
 		System.out.println("ADMIN DEFINED CLASSES:");
 		File curDir = new File(NEWCLASSDIR);
@@ -746,7 +746,7 @@ public class Functions{
 				}
 				else {
 					// TCP/UDP choise
-					System.out.println("Do you want to apply TCP protocol? (yes/no):");
+					System.out.println("Do you want to apply TCP protocol to interface " + pair.getKey() + " ? (yes/no):");
 					String input;
 					do {
 						input = System.console().readLine();
