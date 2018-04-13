@@ -390,7 +390,7 @@ public class Functions{
 			List<String[]> descriptions = new LinkedList<>();
 			List<String> addresses = null;
 			Runtime rt = Runtime.getRuntime();
-			while(addresses == null) {
+			do {
 				Process vtysh = rt.exec(VTYCOMMAND);
 				if (vtysh == null) {
 					System.err.println("Error in command string");
@@ -398,23 +398,23 @@ public class Functions{
 				}
 				else {
 					addresses = getRouterIds(vtysh.getInputStream());
-					addresses.forEach(ip -> {
-						String[] routerDesc = new String[3];	// hostname, ip and if ABR or not
-						OSPFRouter router = new OSPFRouter(ip);
-						try {
-							router.connect(USER, PASSWORD);
-							routerDesc[0] = router.getHostname();
-							routerDesc[1] = ip;
-							routerDesc[2] = router.isBorderRouter() ? "ABR" : "";
-							router.disconnect();
-							descriptions.add(routerDesc);
-						} 
-						catch (IOException e) {
-							System.err.println("Error connecting to " + ip);
-						}
-					});
 				}
-			}
+			}while (addresses == null);
+			addresses.forEach(ip -> {
+				String[] routerDesc = new String[3];	// hostname, ip and if ABR or not
+				OSPFRouter router = new OSPFRouter(ip);
+				try {
+					router.connect(USER, PASSWORD);
+					routerDesc[0] = router.getHostname();
+					routerDesc[1] = ip;
+					routerDesc[2] = router.isBorderRouter() ? "ABR" : "";
+					router.disconnect();
+					descriptions.add(routerDesc);
+				} 
+				catch (IOException e) {
+					System.err.println("Error connecting to " + ip);
+				}
+			});
 			return descriptions;
 		}
 		catch (Exception e) {
@@ -463,6 +463,9 @@ public class Functions{
 		Pattern pattern = Pattern.compile("^(\\d){1,3}\\.(\\d){1,3}\\.(\\d){1,3}\\.(\\d){1,3}", Pattern.MULTILINE);
 		String out = IOUtils.readFully(s).toString();
 		if (out.isEmpty() || out == null) {
+			return null;
+		}
+		if (!out.contains(splitEndToken)) {
 			return null;
 		}
 		if (topology == null || !topology.equals(out)) {
