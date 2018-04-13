@@ -1,8 +1,6 @@
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -25,17 +23,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javafx.util.Pair;
-import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.common.IOUtils;
-import net.schmizz.sshj.common.LoggerFactory;
-import net.schmizz.sshj.common.StreamCopier;
-import net.schmizz.sshj.connection.ConnectionException;
-import net.schmizz.sshj.connection.channel.direct.Session;
-import net.schmizz.sshj.connection.channel.direct.Session.Shell;
-import net.schmizz.sshj.transport.TransportException;
-import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.sf.expectit.Expect;
-import net.sf.expectit.ExpectBuilder;
 
 public class Functions{
 	
@@ -106,8 +95,7 @@ public class Functions{
 		printRouterList();
 		boolean isValidInput = false;
 		do {
-			System.out.println("Choose the router IP of the list to which you want to connect to:");
-			System.out.println("Enter .exit to return back");
+			System.out.println("Choose the router IP of the list to which you want to connect to (.exit to return back):");
 			userInput = System.console().readLine();
 			if(userInput.equals(".exit"))
 				return;
@@ -120,12 +108,13 @@ public class Functions{
 			do {
 				userInput = System.console().readLine();
 				exp.sendLine(userInput);
+				if ("quit".equals(userInput) || "exit".equals(userInput)) {
+					router.disconnect();
+				}
 			}while (!"quit".equals(userInput) || !"exit".equals(userInput));
 		}
 		catch (Exception e) {
-			
 		}
-		router.disconnect();	
 	}
 	
 //******************************************************************************************************************************************* 
@@ -134,7 +123,7 @@ public class Functions{
 	 * Show the LSA Database retrieved from ospfd.
 	 */
 	public void showTopology() {
-		System.out.println("Show Topology, This is a test\n");
+		System.out.println("Show Topology\n");
 		while(topology == null || topology.isEmpty()) {
 			try {
 				Process vtysh = this.rt.exec(VTYCOMMAND);
@@ -164,8 +153,7 @@ public class Functions{
 		System.out.println("Starting DiffServ Configuration wizard...\n");
 		printAllClasses();
 		while(input1 == null) {
-			System.out.println("Do you want to use standard (std) or new classes(new)? ");
-			System.out.println("Enter .exit to return back");
+			System.out.println("Do you want to use standard (std) or new classes(new)? (.exit to return back)");
 			input1 = System.console().readLine();
 			if(input1.equals(".exit"))
 				return;
@@ -204,7 +192,7 @@ public class Functions{
 		}
 		else if (input1.equals("std") && input2.equals("all")) {
 			System.out.println("\nGetting router list");
-			routerDescription = getRouterDesc();
+			if (routerDescription == null) routerDescription = getRouterDesc();
 			if (routerDescription == null) {
 				System.err.println("Error retrieving list of router");
 				return;
@@ -227,7 +215,7 @@ public class Functions{
 		else if (input1.equals("new") && input2.equals("all")) {
 			
 			System.out.println("\nGetting router list");
-			routerDescription = getRouterDesc();
+			if (routerDescription == null) routerDescription = getRouterDesc();
 			if (routerDescription == null) {
 				System.err.println("Error retrieving list of router");
 				return;
@@ -269,8 +257,8 @@ public class Functions{
 			System.out.println("IP of the router is not known. Exiting.");
 			System.exit(1);
 		}
-		System.out.printf("Enter name of the new class: \n");
-		System.out.println("Enter .exit to return back");
+		printNewClasses();
+		System.out.println("\nEnter name of the new class or those you want redefine  (.exit to return back): \n");
 		String filename = System.console().readLine();
 		if(filename.equals(".exit"))
 			return null;
@@ -314,17 +302,17 @@ public class Functions{
 					boolean checked = false;
 					do {
 						System.out.print("\n\nSet a DSCP value for this class (literal or numerical, 0 is default): ");
-						userResp = System.console().readLine();
+						userResp = System.console().readLine().toUpperCase();
 						try {
 							int dscpIntValue = Integer.parseInt(userResp);
 							checked = this.dscpValues.containsValue(dscpIntValue) ? true : false; 
 						}
 						catch (NumberFormatException e){
-							checked = this.dscpValues.containsKey(userResp.toUpperCase()) ? true : false;
+							checked = this.dscpValues.containsKey(userResp) ? true : false;
 						}
 					} while (!checked);
-					if(!(userResp.equals("0") || this.dscpValues.get(userResp.toUpperCase()) == 0)) {
-						classFile.println("set ip dscp " + userResp.toUpperCase());
+					if(!(userResp.equals("0"))) {
+						classFile.println("set ip dscp " + userResp);
 					}
 				}
 				else {
@@ -354,6 +342,7 @@ public class Functions{
 		}
 		return filename;
 	}
+	
 
 	private boolean isInsideBound(String s, int lowerBound, int upperBound) {
 		if (upperBound < lowerBound) {
@@ -370,10 +359,10 @@ public class Functions{
 		}
 	}
 	
-//******************************************************************************************************************************************* 	
+//*******************************************************************************************************************************************
+
 	
 	public void showRunningConf() throws IOException {
-
 		printRouterList();
 		while(userInput == null) {
 			System.out.println("Choose the router IP of the list to which you want the running-conf:");
@@ -388,6 +377,7 @@ public class Functions{
 		router.disconnect();
 		System.out.println(conf);
 	}
+	
 	
 //******************************************************************************************************************************************* 
 	
@@ -514,43 +504,10 @@ public class Functions{
 			System.out.println(desc[0] + "\t\t" + desc[1] + "\t" + desc[2]);
 		}
 		System.out.println();
-	}
-	
+	}	
 //******************************************************************************************************************************************* 	
 	
-	/**
-	 * Redirect output stream in order to send user's command to the router
-	 * @param sh
-	 * @param ses
-	 * @throws IOException
-	 */
-	private void redirect(Shell sh, Session ses, boolean onlyOutput) throws IOException {
-		if(!onlyOutput) {
-			try {
-				new StreamCopier(sh.getInputStream(), System.out, LoggerFactory.DEFAULT)
-	            .bufSize(sh.getLocalMaxPacketSize())
-	            .spawn("stdout");
-				new StreamCopier(sh.getErrorStream(), System.err, LoggerFactory.DEFAULT)
-	            	.bufSize(sh.getLocalMaxPacketSize())
-	            	.spawn("stderr");
-				new StreamCopier(System.in, sh.getOutputStream(), LoggerFactory.DEFAULT)
-					.bufSize(sh.getRemoteMaxPacketSize())
-					.copy();
-				System.out.println("\n");
-	        }
-	        catch (TransportException | ConnectionException e){
-	        	System.err.printf("Exception caught: %s\n%s\n", e.getClass().getName(), e.getMessage());
-	        }finally {
-	            ses.close();
-	        }
-		}
-		else {
-			new StreamCopier(sh.getInputStream(), System.out, LoggerFactory.DEFAULT)
-            .bufSize(sh.getLocalMaxPacketSize())
-            .spawn("stdout");
-		}
-		
-	}
+
 	
 //*******************************************************************************************************************************************
 	
@@ -566,9 +523,10 @@ public class Functions{
 	
 	public void printAllClasses() {
 		System.out.println("STANDARD CLASSES:\n"
-				+ "-VoIP\n"
-				+ "-Video\n"
-				+ "-Web");
+				+ "-VOIP\n"
+				+ "-VIDEO\n"
+				+ "-WEB\n"
+				+ "-EXCESS");
 		System.out.println("ADMIN DEFINED CLASSES:");
 		File curDir = new File(NEWCLASSDIR);
 		fileList = curDir.listFiles();
@@ -603,41 +561,54 @@ public class Functions{
 		return valueList;
 	}
 	
+	
 	public void verifyNewClass(String classFileName) throws IOException {
 		Path classPath = Paths.get(NEWCLASSDIR, classFileName);
 		List<String> rows = Files.readAllLines(classPath);
 		boolean saveFile = false;
 		System.out.println("The content of the class " + classFileName + " is the following:\n");
-		printClassContent(rows);
-		System.out.println("Insert the line or the lines (comma separated list) you want them to be changed (type no if it is all right):");
-		String userInput = System.console().readLine();
-		if (isCommaSeparated(userInput)) {
-			int maxRows = rows.size();
-			for (Integer rowNum : getIntValues(userInput)) {
-				try {
-					String oldLine = rows.get(rowNum - 1); // We count from 0, user from 1
-					System.out.println("Old row value: ");
-					System.out.println(oldLine);
-					System.out.println("Insert new line below :");
-					String newLine = System.console().readLine();
-					if (!oldLine.equals(newLine)) {
-						saveFile = true;
-						rows.set(rowNum, newLine);
+		boolean userConfirmed = false;
+		do {
+			printClassContent(rows);
+			System.out.println("Insert the line or the lines (comma separated list) you want them to be changed (type no or RETURN if it is all right):");
+			String userInput = System.console().readLine();
+			if ("no".equals(userInput) || "".equals(userInput)) {
+				break;
+			}
+			if (isCommaSeparated(userInput)) {
+
+				int maxRows = rows.size();
+				for (Integer rowNum : getIntValues(userInput)) {
+					try {
+						String oldLine = rows.get(rowNum - 1); // We count from 0, user from 1
+						System.out.println("Old row value: ");
+						System.out.println(oldLine);
+						System.out.println("Insert new line below :");
+						String newLine = System.console().readLine();
+						if (!oldLine.equals(newLine)) {
+							rows.set(rowNum - 1, newLine);
+						}
+					}
+					catch (NumberFormatException | IndexOutOfBoundsException e ) {
+						System.err.println("You have inserted an invalid row number for this file: " + userInput);
+						System.err.println("Max number of rows: " + maxRows);
 					}
 				}
-				catch (NumberFormatException | IndexOutOfBoundsException e ) {
-					System.err.println("You have inserted an invalid row number for this file: " + rowNum);
-					System.err.println("Max number of rows: " + maxRows);
+				printClassContent(rows);
+				System.out.println("Do you want to save the changes? (yes/no)");
+				do {
+					userInput = System.console().readLine();
+				} while (!"yes".equals(userInput) && !"no".equals(userInput));
+				if ("yes".equals(userInput)) {
+					userConfirmed = saveFile = true;
 				}
 			}
-			if (saveFile == true) {
-				Files.write(classPath, rows);
-			}
-		}
-		else {
-			System.err.println("You not have inserted a comma separated list");
-		}
+		} while (userConfirmed == false);
+		if (saveFile == true) {
+			Files.write(classPath, rows);
+		}			
 	}
+	
 	
 	private boolean isCommaSeparated(String s) {
 		Pattern pattern = Pattern.compile("^(\\d+)(,\\s*\\d+)*$|^no$");
@@ -746,7 +717,7 @@ public class Functions{
 				}
 				else {
 					// TCP/UDP choise
-					System.out.println("Do you want to apply TCP protocol? (yes/no):");
+					System.out.println("Do you want to apply TCP protocol to interface " + pair.getKey() + " ? (yes/no):");
 					String input;
 					do {
 						input = System.console().readLine();
@@ -809,7 +780,12 @@ public class Functions{
 		commands.add("policy-map " + policyName);
 		for (String dsClass : classes) {
 			try {
-				commands.addAll(readClassCommands(dsClass, std));
+				if(std) {
+					commands.addAll(readStdClassCommands(dsClass, true));					
+				}
+				else {
+					commands.addAll(readClassCommands(dsClass, false));					
+				}
 				commands.add("exit");
 			}
 			catch (IOException e) {
@@ -826,6 +802,35 @@ public class Functions{
 		commands.add("service-policy " + (br ? "input " : "output ") + policyName);
 		commands.add("exit");
 		
+		return commands;
+	}
+	
+	public List<String> readStdClassCommands (String stdClass, boolean isBr) {
+		List<String> commands = new LinkedList<>();
+		if (isBr == true) {
+			commands.add("class " + stdClass);
+			switch (stdClass) {
+			case "WEB":
+				commands.add("set ip dscp 0");
+				break;
+			
+			case "VIDEO":
+				commands.add("set ip dscp AF13");
+				break; 
+				
+			case "VOIP":
+				commands.add("set ip dscp EF");
+				break;
+			
+			case "EXCESS":
+				commands.add("set ip dscp AF43");
+				break;
+			
+			default:
+				throw new IllegalArgumentException("no standard class called");
+			}
+			commands.add("exit");
+		}
 		return commands;
 	}
 	
