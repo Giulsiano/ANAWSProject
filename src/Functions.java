@@ -702,13 +702,12 @@ public class Functions{
 	 * @throws IOException If reading the file makes some problems
 	 */
 	private List<String> readClassCommands(String className, boolean std) throws IOException{
-		if(std)
-			return Files.readAllLines(Paths.get(STDCLASSDIR, className));
-		else
-			return Files.readAllLines(Paths.get(NEWCLASSDIR, className));
+	
+		return Files.readAllLines(Paths.get((std ? STDCLASSDIR : NEWCLASSDIR), className));
+		
 	}
 	
-	public List<String> getClassConfigureCommands(Pair<String, String> pair, List<String> classes, boolean br, boolean std) {
+	public List<String> getClassConfigureCommands(Pair<String, String> pair, List<String> classes, boolean br, boolean std) throws IOException {
 		List<String> commands = new LinkedList<>();
 		int accessListNum = 101;
 		
@@ -748,7 +747,47 @@ public class Functions{
 				commands.add("exit");
 				accessListNum ++;
 			}
-			
+		}
+		
+		for(String dsClass: classes) {
+			if(std) {
+				switch (dsClass) {
+					case "WEB":
+						commands.add("class-map match-all WEB");
+						commands.add("match dscp af33");
+						break;
+					
+					case "VIDEO":
+						commands.add("class-map match-all VIDEO");
+						commands.add("match dscp af13");
+					case "VOIP":
+						commands.add("class-map match-all VOIP");
+						commands.add("match dscp ef");
+						break;
+					
+					case "EXCESS":
+						commands.add("class-map match-all EXCESS");
+						commands.add("match dscp af43");
+						break;
+					
+					default:
+						throw new IllegalArgumentException("no standard class called " + dsClass);
+			    }
+				commands.add("exit");
+			}
+			else {
+				commands.add("class-map match-all " + dsClass);
+				List<String> classcommands = readClassCommands(dsClass, std);
+				for(String command : classcommands) {
+					Matcher match = Pattern.compile("set ip dscp (.+)").matcher(command);
+					if(match.matches()) {
+						commands.add("match dscp " + match.group(1));
+						commands.add("exit");
+					}
+						
+				}
+				
+			}
 		}
 		
 		// Set the policy name, i.e. Et11 
@@ -759,10 +798,7 @@ public class Functions{
 		commands.add("policy-map " + policyName);
 		for (String dsClass : classes) {
 			try {
-				if(std)
-					commands.addAll(readClassCommands(dsClass, true));
-				else
-					commands.addAll(readClassCommands(dsClass, false));
+				commands.addAll(readClassCommands(dsClass, std));
 				commands.add("exit");
 			}
 			catch (IOException e) {
@@ -772,20 +808,13 @@ public class Functions{
 		}
 		
 		System.out.println("Setting service-policy...");
-		//set service policy input only for BR
-		if(br){
-			commands.add("interface " + ifaceName);
-			commands.add("service-policy input " + policyName);
-			commands.add("exit");
-		}
 		
+		//set service policy input only for BR
 		//set service policy output only for CR
-		else {
-			commands.add("interface " + ifaceName);
-			commands.add("service-policy output " + policyName);
-			commands.add("exit");
-		}
-
+		commands.add("interface " + ifaceName);
+		commands.add("service-policy " + (br ? "input " : "output ") + policyName);
+		commands.add("exit");
+		
 		return commands;
 	}
 	
