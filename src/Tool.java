@@ -4,7 +4,7 @@ import java.util.List;
 
 import javafx.util.Pair;
 
-//main del tool
+//Tool main
 public class Tool {
 	
 	static String input;

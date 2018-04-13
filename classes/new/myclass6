@@ -1,4 +1,5 @@
-class porcoddio
+class myclass6
 bandwidth percent 100
-random-detect
+bandwidth percent 50
 no random-detect precedence-based
+set ip dscp AF23

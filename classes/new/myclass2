@@ -1,3 +1,4 @@
-class bla
+class myclass2
+bandwidth percent 100
 random-detect
 no random-detect precedence-based

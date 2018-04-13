@@ -1,4 +1,4 @@
-class cacca
+class myclass1
 shape average  1000
 random-detect
 no random-detect precedence-based
