@@ -37,6 +37,7 @@ then
     echo "ospfd is running"
 else
     echo "ospfd is not running. Please run the service before starting the tool."
+    exit 1
 fi
 
 # Make dirs and standard classes if there aren't any

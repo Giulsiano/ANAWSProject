@@ -95,8 +95,7 @@ public class Functions{
 		printRouterList();
 		boolean isValidInput = false;
 		do {
-			System.out.println("Choose the router IP of the list to which you want to connect to:");
-			System.out.println("Enter .exit to return back");
+			System.out.println("Choose the router IP of the list to which you want to connect to (.exit to return back):");
 			userInput = System.console().readLine();
 			if(userInput.equals(".exit"))
 				return;
@@ -124,7 +123,7 @@ public class Functions{
 	 * Show the LSA Database retrieved from ospfd.
 	 */
 	public void showTopology() {
-		System.out.println("Show Topology, This is a test\n");
+		System.out.println("Show Topology\n");
 		while(topology == null || topology.isEmpty()) {
 			try {
 				Process vtysh = this.rt.exec(VTYCOMMAND);
@@ -154,8 +153,7 @@ public class Functions{
 		System.out.println("Starting DiffServ Configuration wizard...\n");
 		printAllClasses();
 		while(input1 == null) {
-			System.out.println("Do you want to use standard (std) or new classes(new)? ");
-			System.out.println("Enter .exit to return back");
+			System.out.println("Do you want to use standard (std) or new classes(new)? (.exit to return back)");
 			input1 = System.console().readLine();
 			if(input1.equals(".exit"))
 				return;
@@ -259,8 +257,8 @@ public class Functions{
 			System.out.println("IP of the router is not known. Exiting.");
 			System.exit(1);
 		}
-		System.out.printf("Enter name of the new class: \n");
-		System.out.println("Enter .exit to return back");
+		printNewClasses();
+		System.out.println("\nEnter name of the new class or those you want redefine  (.exit to return back): \n");
 		String filename = System.console().readLine();
 		if(filename.equals(".exit"))
 			return null;
@@ -525,9 +523,10 @@ public class Functions{
 	
 	public void printAllClasses() {
 		System.out.println("STANDARD CLASSES:\n"
-				+ "-VoIP\n"
-				+ "-Video\n"
-				+ "-Web");
+				+ "-VOIP\n"
+				+ "-VIDEO\n"
+				+ "-WEB\n"
+				+ "-EXCESS");
 		System.out.println("ADMIN DEFINED CLASSES:");
 		File curDir = new File(NEWCLASSDIR);
 		fileList = curDir.listFiles();
@@ -719,7 +718,7 @@ public class Functions{
 				}
 				else {
 					// TCP/UDP choise
-					System.out.println("Do you want to apply TCP protocol? (yes/no):");
+					System.out.println("Do you want to apply TCP protocol to interface " + pair.getKey() + " ? (yes/no):");
 					String input;
 					do {
 						input = System.console().readLine();
