@@ -43,6 +43,9 @@ fi
 if [ ! -d "classes" ]; then
 	mkdir classes
 	cd classes
+	mkdir new
+	mkdir std
+	cd std
 	touch WEB VOIP VIDEO EXCESS
 	echo "class WEB" > WEB
 	echo " bandwidth percent 5" >> WEB
@@ -54,7 +57,8 @@ if [ ! -d "classes" ]; then
 	echo " bandwidth percent 60" >> VIDEO
 	echo "class EXCESS" > EXCESS
 	echo " bandwidth percent 4" >> EXCESS
-	cd -
+	cd ..
+	cd ..
 fi
 
 INTERFACE0="tap0"

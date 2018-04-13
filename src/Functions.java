@@ -205,6 +205,15 @@ public class Functions{
 			}
 		}
 		else if (input1.equals("new") && input2.equals("one")) {
+			
+			////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			File curDir = new File(NEWCLASSDIR);
+			fileList = curDir.listFiles();
+			if(fileList.length == 0) {
+				System.out.println("No admin class defined");
+				return;
+			}
+			
 			printRouterList();
 			while(addr == null) {
 				System.out.print("Choose the router (enter the IP address): ");
@@ -215,6 +224,13 @@ public class Functions{
 			confDF(addr, false);
 		}
 		else if (input1.equals("new") && input2.equals("all")) {
+			File curDir = new File(NEWCLASSDIR);
+			fileList = curDir.listFiles();
+			if(fileList.length == 0) {
+				System.out.println("No admin class defined");
+				return;
+			}
+			
 			System.out.println("\nGetting router list");
 			routerDescription = getRouterDesc();
 			if (routerDescription == null) {
