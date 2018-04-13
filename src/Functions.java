@@ -205,6 +205,15 @@ public class Functions{
 			}
 		}
 		else if (input1.equals("new") && input2.equals("one")) {
+			
+			////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			File curDir = new File(NEWCLASSDIR);
+			fileList = curDir.listFiles();
+			if(fileList.length == 0) {
+				System.out.println("No admin class defined");
+				return;
+			}
+			
 			printRouterList();
 			while(addr == null) {
 				System.out.print("Choose the router (enter the IP address): ");
@@ -215,6 +224,13 @@ public class Functions{
 			confDF(addr, false);
 		}
 		else if (input1.equals("new") && input2.equals("all")) {
+			File curDir = new File(NEWCLASSDIR);
+			fileList = curDir.listFiles();
+			if(fileList.length == 0) {
+				System.out.println("No admin class defined");
+				return;
+			}
+			
 			System.out.println("\nGetting router list");
 			routerDescription = getRouterDesc();
 			if (routerDescription == null) {
@@ -544,7 +560,7 @@ public class Functions{
 //*******************************************************************************************************************************************
 	
 	public void printNewClasses() {
-		System.out.println("\n ( " + " List of available classes:\n");
+		System.out.println("\n " + " List of available classes:\n");
 		File curDir = new File(NEWCLASSDIR);
 		fileList = curDir.listFiles();
 		for(int i = 0; i<fileList.length; i++) {
@@ -680,7 +696,7 @@ public class Functions{
 							  (selectedClasses.size() > 1 ? " classes" : " class") +
 							   " (1-%d): ", ifaceListSize);
 			input = System.console().readLine();
-		}while (!isCommaSeparated(input));
+		}while (!isCommaSeparated(input) || !checkClass(input, 1, ifaceListSize));
 		List<String> commands = null;
 		router.connect(USER, PASSWORD);
 		isBR = router.isBorderRouter();
