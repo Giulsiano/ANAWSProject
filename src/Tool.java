@@ -71,12 +71,12 @@ public class Tool {
 				func.showRunningConf();
 				break;
 			
-			/*case 6:
-				List<String> classes = new LinkedList<String>();
-				List<String> commands = func.getStdClassConfigureCommands(
-													new Pair<String, String>("Ethernet1/1", "192.168.0.100"), 
-													classes);
-				break;*/
+			case 6:
+				boolean test = func.testIsBorderRouter("192.168.0.254");
+				test &= func.testIsBorderRouter("10.0.3.2");
+				System.out.println(test);
+				
+				break;
 				
 			default:
 				System.out.println("This command does not exist\n");
