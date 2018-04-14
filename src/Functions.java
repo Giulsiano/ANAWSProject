@@ -628,6 +628,7 @@ public class Functions{
 			if (selectedIface >= 0 && selectedIface < ifaceListSize) {
 				commands = getClassConfigureCommands(ifaceList.get(selectedIface),
 													 selectedClasses, isBR, std);
+				
 			}
 			router.configureRouter(commands);
 		}
@@ -750,11 +751,16 @@ public class Functions{
 		}
 		
 		System.out.println("Setting service-policy...");
+		String userInput;
+		do {
+			System.out.println("Apply the service policy to the input traffic? (yes/no)");
+			userInput = System.console().readLine().toLowerCase();
+		}while (!"no".equals(userInput) || !"yes".equals(userInput));
 		
 		//set service policy input only for BR
 		//set service policy output only for CR
 		commands.add("interface " + ifaceName);
-		commands.add("service-policy " + (br ? "input " : "output ") + policyName);
+		commands.add("service-policy " + (userInput.equals("yes") ? "input " : "output ") + policyName);
 		commands.add("exit");
 		
 		return commands;
