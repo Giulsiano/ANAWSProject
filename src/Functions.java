@@ -133,13 +133,13 @@ public class Functions{
 				}
 				else {
 					topology = IOUtils.readFully(vtysh.getInputStream()).toString();
-					System.out.println(topology);
 				}
 			} catch (IOException e) {
 				System.err.printf("Exception caught: %s\n%s\n", e.getClass().getName(), e.getMessage());
 				System.exit(1);
 			}
-		}	
+		}
+		System.out.println(topology);
 	}
 	
 //******************************************************************************************************************************************* 
