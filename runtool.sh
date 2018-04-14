@@ -10,7 +10,7 @@ case $1 in
 		;;
 	*)
 		echo "Usage: ./runtool.sh [ -d]"
-		echo "		-d 	enable jvm options for debugging the tool"
+		echo "		-d 	enable jvm options for remotely debugging the tool"
 		;;
 esac 
 
@@ -93,8 +93,5 @@ java ${DEBUG} -cp ${JAVACP} Tool
 cd ../
 echo "Releasing DHCP"
 sudo dhclient -r ${INTERFACE0}
-sudo dhclient -r ${INTERFACE1}
-sudo dhclient -r ${INTERFACE2}
-sudo dhclient -r ${INTERFACE3}
 sudo kill -9 $( cat ${DHCPPIDFILE} )
 rm -f ${DHCPPIDFILE}
