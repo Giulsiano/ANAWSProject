@@ -108,10 +108,7 @@ public class Functions{
 			do {
 				userInput = System.console().readLine();
 				exp.sendLine(userInput);
-				if (!router.isRoot() && ("quit".equals(userInput) || "exit".equals(userInput))) {
-					router.disconnect();
-				}
-			}while (!"quit".equals(userInput) || !"exit".equals(userInput));
+			}while (true);
 		}
 		catch (Exception e) {
 		}
