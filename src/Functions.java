@@ -755,7 +755,7 @@ public class Functions{
 		do {
 			System.out.println("Apply the service policy to the input traffic? (yes/no)");
 			userInput = System.console().readLine().toLowerCase();
-		}while (!"no".equals(userInput) || !"yes".equals(userInput));
+		}while (!"no".equals(userInput) && !"yes".equals(userInput));
 		
 		//set service policy input only for BR
 		//set service policy output only for CR
