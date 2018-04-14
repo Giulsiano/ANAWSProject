@@ -687,48 +687,46 @@ public class Functions{
 				accessListNum ++;
 			}
 		}
-		
-		for(String dsClass: classes) {
-			if(std) {
-				switch (dsClass) {
-					case "WEB":
-						commands.add("class-map match-all WEB");
-						commands.add("match dscp af33");
-						break;
-					
-					case "VIDEO":
-						commands.add("class-map match-all VIDEO");
-						commands.add("match dscp af13");
-					case "VOIP":
-						commands.add("class-map match-all VOIP");
-						commands.add("match dscp ef");
-						break;
-					
-					case "EXCESS":
-						commands.add("class-map match-all EXCESS");
-						commands.add("match dscp af43");
-						break;
-					
-					default:
-						throw new IllegalArgumentException("no standard class called " + dsClass);
-			    }
-				commands.add("exit");
-			}
-			else {
-				commands.add("class-map match-all " + dsClass);
-				List<String> classcommands = readClassCommands(dsClass, std);
-				for(String command : classcommands) {
-					Matcher match = Pattern.compile("set ip dscp (.+)").matcher(command);
-					if(match.matches()) {
-						commands.add("match dscp " + match.group(1));
-						commands.add("exit");
-					}
+		else {
+			for(String dsClass: classes) {
+				if(std) {
+					switch (dsClass) {
+						case "WEB":
+							commands.add("class-map match-all WEB");
+							commands.add("match dscp af33");
+							break;
 						
+						case "VIDEO":
+							commands.add("class-map match-all VIDEO");
+							commands.add("match dscp af13");
+						case "VOIP":
+							commands.add("class-map match-all VOIP");
+							commands.add("match dscp ef");
+							break;
+						
+						case "EXCESS":
+							commands.add("class-map match-all EXCESS");
+							commands.add("match dscp af43");
+							break;
+						
+						default:
+							throw new IllegalArgumentException("no standard class called " + dsClass);
+				    }
+					commands.add("exit");
 				}
-				
+				else {
+					commands.add("class-map match-all " + dsClass);
+					List<String> classcommands = readClassCommands(dsClass, std);
+					for(String command : classcommands) {
+						Matcher match = Pattern.compile("set ip dscp (.+)").matcher(command);
+						if(match.matches()) {
+							commands.add("match dscp " + match.group(1));
+							commands.add("exit");
+						}							
+					}
+				}
 			}
 		}
-		
 		// Set the policy name, i.e. Et11 
 		String ifaceName = pair.getKey();
 		String policyName = (ifaceName.substring(0, 2) + 
