@@ -80,15 +80,15 @@ public class Tool {
 	}
 	
 	public void printManual() throws IOException {
-		System.out.println("1. Connect to router: consente all’admin di connettersi via ssh a un router.\n" + 
-				"2. Show topology: consente di visualizzare la topologia della rete sfruttando il demone ospfd.\n" + 
-				"3. Configure DiffServ: consente di configurare DiffServ su uno o tutti i router della rete in\n" + 
-				"maniera automatizzata; una volta selezionata questa voce verrà richiesta all’admin se\n" + 
-				"utilizzare le classi standard (Video, Web e Voip) oppure definirne di nuove.\n" + 
-				"4. Define new class: consente di definire nuove classi di servizio per i flussi.\n" + 
-				"5. Show router configurations: consente di visualizzare l’attuale configurazione dei router con lo scopo di verifica.\n");
+		System.out.println("1. Connect to router: allows the admin to connect via ssh to a router.\n" + 
+				"2. Show topology: view the network topology using the ospfd daemon.\n" + 
+				"3. Configure DiffServ: allows to configure DiffServ on one or all routers of the network " + 
+				"in an automated way; once this item is selected, the admin will be asked whether to use " + 
+				"the standard classes (Video, Web, Voip and Excess) or to define new ones.\n" + 
+				"4. Define new class: allows you to define new service classes for flows classification.\n" + 
+				"5. Show router configurations: allows you to view the current configuration " +
+				"of the router for the purpose of verification.\n");
 		waitForCommand();
 	}
 	
 }
-
