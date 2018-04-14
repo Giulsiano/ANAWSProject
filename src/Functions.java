@@ -226,30 +226,6 @@ public class Functions{
 		}
 	}
 	
-	private List<String> getRouterHostnamesFromDesc (){
-		return sliceRouterDescription(0);
-	}
-	
-	private List<String> getRouterAddressesFromDesc (){
-		return sliceRouterDescription(1);
-	}
-	
-	/**
-	 * @param index Which is the index of the String array to be retrieved from the 
-	 * routerDescription list
-	 * @return a List of String from the routerDescription list of array of strings or an empty list
-	 * if routerDescription is null 
-	 */
-	private List<String> sliceRouterDescription (int index) {
-		List<String> slice = new LinkedList<>();
-		if (routerDescription != null) {
-			routerDescription.forEach(array -> {
-				slice.add(array[index]);
-			});
-		}
-		return slice;
- 	}
-	
 //******************************************************************************************************************************************* 	
 	
 	public String defineNewClass(boolean calledByFunction, String ip) {
@@ -424,7 +400,6 @@ public class Functions{
 		}
 	}
 	
-	// first of all : stupid version
 	private String getRouterHostname(String ip) {
 		List<String> routerHostname = new LinkedList<>();
 		String name = null;
@@ -439,17 +414,6 @@ public class Functions{
 		return name;
 	}
 	
-	
-	/*
-	 * private List<String> getRouterAddresses(){
-		List<String> routerAddrs = new LinkedList<>();
-		if (routerDescription ==  null) routerDescription = getRouterDesc();
-		for (String[] desc : routerDescription) {
-			routerAddrs.add(desc[1]);
-		}
-		return routerAddrs;
-	}
-	 */
 //******************************************************************************************************************************************* 
 	
 	/** 
@@ -537,7 +501,6 @@ public class Functions{
 	
 //*******************************************************************************************************************************************	
 	
-
 	private List<String> getRouterAddresses(){
 		List<String> routerAddrs = new LinkedList<>();
 		if (routerDescription ==  null) routerDescription = getRouterDesc();
@@ -614,12 +577,6 @@ public class Functions{
 		Pattern pattern = Pattern.compile("^(\\d+)(,\\s*\\d+)*$|^no$");
 		Matcher match = pattern.matcher(s);
 		return match.matches();
-	}
-	
-	private void execute(Expect expect, String cmd) throws IOException{
-		expect.send(cmd);
-		expect.sendLine();
-		return;
 	}
 	
 	private void printClassContent(List<String> fileContent) {
@@ -916,11 +873,6 @@ public class Functions{
 	}
 	
 //*******************************************************************************************************************************************
-	//aux
-	private String nameFromPosition(int position) {
-	    String match = fileList[position].getName();
-		return match;
-	}
 	
 }
 

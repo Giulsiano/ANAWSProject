@@ -13,7 +13,7 @@ public class Tool {
 	public static void main(String[] args) throws IOException {
 		Tool anawsTool = new Tool();
 		func = new Functions();
-		System.out.println("Welcome in ANAWSTool!");
+		System.out.println("Welcome in DiffServ Tool!");
 		while(true) {
 			anawsTool.printMenu();
 		}
@@ -70,13 +70,6 @@ public class Tool {
 			
 			case 5:
 				func.showRunningConf();
-				break;
-			
-			case 6:
-				boolean test = func.testIsBorderRouter("192.168.0.254");
-				test &= func.testIsBorderRouter("10.0.3.2");
-				System.out.println(test);
-				
 				break;
 				
 			default:
