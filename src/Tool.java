@@ -8,9 +8,11 @@ import javafx.util.Pair;
 public class Tool {
 	
 	static String input;
+	private static Functions func;
 	
 	public static void main(String[] args) throws IOException {
 		Tool anawsTool = new Tool();
+		func = new Functions();
 		System.out.println("Welcome in ANAWSTool!");
 		while(true) {
 			anawsTool.printMenu();
@@ -38,7 +40,6 @@ public class Tool {
 	}
 	
 	public void whatCommand(String in) throws IOException {
-		Functions func = new Functions();
 		if(in.startsWith(".help")) {
 			printManual();
 		}
