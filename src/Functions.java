@@ -45,7 +45,7 @@ public class Functions{
     	rt = Runtime.getRuntime();
 		localAddress = new HashSet<String>();
 		dscpValues = new HashMap<>();
-		dscpValues.put("Best effort", 0);
+		dscpValues.put("BE", 0);
 		dscpValues.put("AF11", 10);
 		dscpValues.put("AF12", 12);
 		dscpValues.put("AF13", 14);
@@ -265,7 +265,7 @@ public class Functions{
 						classFile.println("shape average  " + userResp);
 					}
 					do {
-						System.out.print("\n\nApply random early detection to class? (yes/no) ");
+						System.out.println("\n\nApply random early detection to class? (yes/no) ");
 						userResp = System.console().readLine();						
 					} while (!(userResp.equals("yes") || userResp.equals("no")));
 					if(userResp.equals("yes")) {
@@ -274,6 +274,16 @@ public class Functions{
 					}
 					boolean checked = false;
 					do {
+						System.out.println("Avaiable DSCP values: ");
+						System.out.println("DSCP\t\tDecimal");
+						String ss;
+						String[] spl;
+						for(Map.Entry<String, Integer> i : dscpValues.entrySet()) {
+							//System.out.println(i);
+							ss = i.toString(); //convert map to string
+							spl = ss.split("="); //split the string
+							System.out.println(spl[0] + "\t\t" + spl[1]);
+						}
 						System.out.print("\n\nSet a DSCP value for this class (literal or numerical, 0 is default): ");
 						userResp = System.console().readLine().toUpperCase();
 						try {

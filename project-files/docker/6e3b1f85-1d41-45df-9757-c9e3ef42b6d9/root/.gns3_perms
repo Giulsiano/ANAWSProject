@@ -1,4 +1,5 @@
 644:1001:1001:/root/.profile
+600:1001:1001:/root/.bash_history
 644:1001:1001:/root/.cache/pip/selfcheck.json
 644:1001:1001:/root/.cache/pip/wheels/3c/d0/09/cd78d0ff4d6cfecfbd730782a7815a4571cd2cd4d2ed6e69d9/functools32-3.2.3.post2-cp27-none-any.whl
 755:1001:1001:/root/.cache/pip/wheels/3c/d0/09/cd78d0ff4d6cfecfbd730782a7815a4571cd2cd4d2ed6e69d9

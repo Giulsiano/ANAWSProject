@@ -1,19 +1,19 @@
-Apr 13 16:55:29.974 HYPERVISOR: Release 0.2.17-amd64/Linux (tag 2017072410)
-Apr 13 16:55:29.974 HYPERVISOR: Started on IP = 127.0.0.1, TCP port = 40549.
-Apr 13 16:55:29.985 HYPERVISOR: exec_cmd: hypervisor version 
-Apr 13 16:55:29.986 HYPERVISOR: exec_cmd: hypervisor working_dir /home/user/git/ANAWSProject/project-files/dynamips 
-Apr 13 16:55:29.986 GENERAL: working_dir=/home/user/git/ANAWSProject/project-files/dynamips
-Apr 13 16:55:29.986 HYPERVISOR: exec_cmd: ethsw create SW4 
-Apr 13 16:55:31.947 HYPERVISOR: exec_cmd: nio create_udp udp-864915a6-dc18-456d-ad40-aff348b8f30d 10035 127.0.0.1 10034 
-Apr 13 16:55:31.948 HYPERVISOR: exec_cmd: ethsw add_nio SW4 udp-864915a6-dc18-456d-ad40-aff348b8f30d 
-Apr 13 16:55:31.959 HYPERVISOR: exec_cmd: ethsw set_access_port SW4 udp-864915a6-dc18-456d-ad40-aff348b8f30d 1 
-Apr 13 16:55:32.575 HYPERVISOR: exec_cmd: nio create_udp udp-c0ff9fc6-135b-4bf9-9d8d-9a4fab9fdf30 10059 127.0.0.1 10058 
-Apr 13 16:55:32.575 HYPERVISOR: exec_cmd: ethsw add_nio SW4 udp-c0ff9fc6-135b-4bf9-9d8d-9a4fab9fdf30 
-Apr 13 16:55:32.595 HYPERVISOR: exec_cmd: ethsw set_access_port SW4 udp-c0ff9fc6-135b-4bf9-9d8d-9a4fab9fdf30 1 
-Apr 13 16:55:32.678 HYPERVISOR: exec_cmd: nio create_udp udp-f88626d0-5e46-4087-a1c9-9f08699a3dca 10062 127.0.0.1 10063 
-Apr 13 16:55:32.678 HYPERVISOR: exec_cmd: ethsw add_nio SW4 udp-f88626d0-5e46-4087-a1c9-9f08699a3dca 
-Apr 13 16:55:32.697 HYPERVISOR: exec_cmd: ethsw set_access_port SW4 udp-f88626d0-5e46-4087-a1c9-9f08699a3dca 1 
-Apr 13 17:17:38.660 HYPERVISOR: exec_cmd: ethsw delete SW4 
-Apr 13 17:17:38.733 HYPERVISOR: exec_cmd: hypervisor stop 
-Apr 13 17:17:39.093 HYPERVISOR: Stopped.
-Apr 13 17:17:39.093 GENERAL: reset done.
+Apr 15 16:48:01.331 HYPERVISOR: Release 0.2.17-amd64/Linux (tag 2017072410)
+Apr 15 16:48:01.331 HYPERVISOR: Started on IP = 127.0.0.1, TCP port = 33103.
+Apr 15 16:48:01.343 HYPERVISOR: exec_cmd: hypervisor version 
+Apr 15 16:48:01.344 HYPERVISOR: exec_cmd: hypervisor working_dir /home/user/git/ANAWSProject/project-files/dynamips 
+Apr 15 16:48:01.344 GENERAL: working_dir=/home/user/git/ANAWSProject/project-files/dynamips
+Apr 15 16:48:01.344 HYPERVISOR: exec_cmd: ethsw create SW2 
+Apr 15 16:48:04.577 HYPERVISOR: exec_cmd: nio create_udp udp-7fa83e21-20ee-4574-a0fa-7f98cb44c256 10017 127.0.0.1 10016 
+Apr 15 16:48:04.577 HYPERVISOR: exec_cmd: ethsw add_nio SW2 udp-7fa83e21-20ee-4574-a0fa-7f98cb44c256 
+Apr 15 16:48:04.589 HYPERVISOR: exec_cmd: ethsw set_access_port SW2 udp-7fa83e21-20ee-4574-a0fa-7f98cb44c256 1 
+Apr 15 16:48:05.400 HYPERVISOR: exec_cmd: nio create_udp udp-b959b217-913c-4126-8c97-e4b0924290b8 10051 127.0.0.1 10050 
+Apr 15 16:48:05.400 HYPERVISOR: exec_cmd: ethsw add_nio SW2 udp-b959b217-913c-4126-8c97-e4b0924290b8 
+Apr 15 16:48:05.407 HYPERVISOR: exec_cmd: ethsw set_access_port SW2 udp-b959b217-913c-4126-8c97-e4b0924290b8 1 
+Apr 15 16:48:05.835 HYPERVISOR: exec_cmd: nio create_udp udp-d1dca108-012e-4494-a927-d5c6a6fa137b 10066 127.0.0.1 10067 
+Apr 15 16:48:05.836 HYPERVISOR: exec_cmd: ethsw add_nio SW2 udp-d1dca108-012e-4494-a927-d5c6a6fa137b 
+Apr 15 16:48:05.853 HYPERVISOR: exec_cmd: ethsw set_access_port SW2 udp-d1dca108-012e-4494-a927-d5c6a6fa137b 1 
+Apr 16 10:26:17.745 HYPERVISOR: exec_cmd: ethsw delete SW2 
+Apr 16 10:26:17.842 HYPERVISOR: exec_cmd: hypervisor stop 
+Apr 16 10:26:17.874 HYPERVISOR: Stopped.
+Apr 16 10:26:17.874 GENERAL: reset done.
