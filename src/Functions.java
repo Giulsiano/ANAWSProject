@@ -750,13 +750,15 @@ public class Functions{
 				else {
 					commands.addAll(readClassCommands(dsClass, false));					
 				}
-				commands.add("exit");
+				//commands.add("exit");
 			}
 			catch (IOException e) {
 				System.err.println("Can't read file " + dsClass);
 				return null;
 			}
 		}
+		commands.add("exit"); // I COMANDI EXIT DI RIGA 753 E 803
+		commands.add("exit");// LI FACCIO TUTTI E DUE QUI
 		
 		System.out.println("Setting service-policy...");
 		String userInput;
@@ -798,7 +800,7 @@ public class Functions{
 			default:
 				throw new IllegalArgumentException("no standard class called");
 			}
-			commands.add("exit");
+			//commands.add("exit");
 		}
 		return commands;
 	}
