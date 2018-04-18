@@ -674,7 +674,7 @@ public class Functions{
 							break;
 						
 						case "EXCESS":
-							commands.add("access-list " + accessListNum + " permit any");
+							commands.add("access-list " + accessListNum + " permit any any");
 							break;
 						
 						default:
@@ -836,7 +836,7 @@ public class Functions{
 						+ "2- Video\n"
 						+ "3- Web\n"
 						+ "4- Excess\n"
-						+ "You can insert a comma separated list if you want to apply more than one class");
+						+ "You can insert a comma separated list (of number) if you want to apply more than one class");
 				userInput = System.console().readLine();
 			} while (!isCommaSeparated(userInput) || !checkClass(userInput, 1, 4));
 
@@ -873,7 +873,7 @@ public class Functions{
 			do {		
 				System.out.println("Choose which class or classes to apply: ");
 				printNewClasses();
-				System.out.println("You can insert a comma separated list if you want to apply more than one class");
+				System.out.println("You can insert a comma separated list (of number) if you want to apply more than one class");
 				userInput = System.console().readLine();
 				
 			} while (!isCommaSeparated(userInput) || !checkClass(userInput, 1, fileList.length));
