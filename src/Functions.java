@@ -145,8 +145,8 @@ public class Functions{
 		String input1 = null;
 		String input2 = null;
 		String addr = null;
-		String filepos = null;
-		int pos = 0;
+		//String filepos = null;
+		//int pos = 0;
 		System.out.println("Starting DiffServ Configuration wizard...\n");
 		printAllClasses();
 		while(input1 == null) {
