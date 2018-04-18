@@ -347,6 +347,7 @@ public class Functions{
 	
 	public void showRunningConf() throws IOException {
 		printRouterList();
+		userInput = null;
 		while(userInput == null) {
 			System.out.println("Choose the router IP of the list to which you want the running-conf:");
 			userInput = System.console().readLine();
