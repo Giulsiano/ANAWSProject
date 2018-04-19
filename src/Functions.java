@@ -674,7 +674,7 @@ public class Functions{
 							break;
 						
 						case "EXCESS":
-							commands.add("access-list " + accessListNum + " permit any any");
+							commands.add("access-list " + accessListNum + " permit ip any any");
 							break;
 						
 						default:
