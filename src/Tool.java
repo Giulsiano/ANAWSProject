@@ -64,7 +64,7 @@ public class Tool {
 				break;
 			
 			case 4:
-				String fileName = func.defineNewClass(false, null);
+				String fileName = func.defineNewClass();
 				if(fileName != null) func.verifyNewClass(fileName);
 				break;
 			

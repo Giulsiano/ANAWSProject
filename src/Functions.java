@@ -41,6 +41,7 @@ public class Functions{
 	private Runtime rt;
 	private Map<String, Integer> dscpValues;
 	
+	
     public Functions() {
     	rt = Runtime.getRuntime();
 		localAddress = new HashSet<String>();
@@ -89,7 +90,10 @@ public class Functions{
 	}
 
 //*******************************************************************************************************************************************    
-    
+    /**
+     * Try to connect to a router which address will be asked to the user.
+     * @throws IOException in case of connection errors
+     */
     public void connectToRouter() throws IOException {
 		String userInput = null;
 		printRouterList();
@@ -141,12 +145,15 @@ public class Functions{
 	
 //******************************************************************************************************************************************* 
 	
+	/**
+	 * Starts the configuration of DiffServ by asking some questions to the user
+	 * @throws IOException In case of connection errors 
+	 */
 	public void configureDF() throws IOException {
 		String input1 = null;
 		String input2 = null;
 		String addr = null;
-		//String filepos = null;
-		//int pos = 0;
+
 		System.out.println("Starting DiffServ Configuration wizard...\n");
 		printAllClasses();
 		while(input1 == null) {
@@ -224,12 +231,11 @@ public class Functions{
 	}
 	
 //******************************************************************************************************************************************* 	
-	
-	public String defineNewClass(boolean calledByFunction, String ip) {
-		if (calledByFunction == true && (ip == null || ip.isEmpty())){
-			System.out.println("IP of the router is not known. Exiting.");
-			System.exit(1);
-		}
+	/**
+	 * Allow the user to define a new class by using a wizard or by inserting lines themself.
+	 * @return The name of the file where the user defined commands is saved
+	 */
+	public String defineNewClass() {
 		printNewClasses();
 		System.out.println("\nEnter name of the new class or those you want redefine  (.exit to return back): \n");
 		String filename = System.console().readLine();
@@ -326,7 +332,13 @@ public class Functions{
 		return filename;
 	}
 	
-
+	/**
+	 * Check if the string s can be converted to an integer and if this integer is inside bound (excluded).
+	 * @param s	the string which has to contain an integer number
+	 * @param lowerBound the lower bound to check against s, that is s must be greater than lowerBound
+	 * @param upperBound the upper bound to check against s, that is s must be lower than upperBound
+	 * @return
+	 */
 	private boolean isInsideBound(String s, int lowerBound, int upperBound) {
 		if (upperBound < lowerBound) {
 			throw new IllegalArgumentException("Lower bound can't be less than upper bound");
@@ -344,7 +356,10 @@ public class Functions{
 	
 //*******************************************************************************************************************************************
 
-	
+	/**
+	 * Connect to a router and ask it for its configuration to be shown to the user.
+	 * @throws IOException if a connection errors occours
+	 */
 	public void showRunningConf() throws IOException {
 		printRouterList();
 		userInput = null;
@@ -408,6 +423,12 @@ public class Functions{
 		}
 	}
 	
+	/**
+	 * Given the ip address as parameter, this function will connect to that ip (must be a valid Cisco 
+	 * router IP address) and return the hostname of the router.
+	 * @param ip the address of the router the user wants its name to know.
+	 * @return the hostname of the router
+	 */
 	private String getRouterHostname(String ip) {
 		List<String> routerHostname = new LinkedList<>();
 		String name = null;
@@ -459,7 +480,10 @@ public class Functions{
 	}
 	
 //******************************************************************************************************************************************* 	
-	
+	/**
+	 * This function prints the router list of the network the tool is attached to. This gives some
+	 * informations about hostname, ip address and if the router is a border router or not.
+	 */
 	private void printRouterList() {
 		System.out.println("Getting router list");
 		if(routerDescription == null) {
@@ -478,11 +502,9 @@ public class Functions{
 		System.out.println();
 	}	
 //******************************************************************************************************************************************* 	
-	
-
-	
-//*******************************************************************************************************************************************
-	
+	/**
+	 * Print the list of the new classes, that is the user defined classes by using this tool.
+	 */
 	public void printNewClasses() {
 		System.out.println("\n " + " List of available classes:\n");
 		File curDir = new File(NEWCLASSDIR);
@@ -490,15 +512,17 @@ public class Functions{
 		for(int i = 0; i<fileList.length; i++) {
 			System.out.println(i+1 + ": " + fileList[i].getName());
 		}
-		//System.out.println("new: create new one\n");
 	}
 	
+	/**
+	 * Print standard and custom classes.
+	 */
 	public void printAllClasses() {
 		System.out.println("STANDARD CLASSES:\n"
-				+ "-VOIP\n"
-				+ "-VIDEO\n"
-				+ "-WEB\n"
-				+ "-EXCESS");
+				+ "- VOIP\n"
+				+ "- VIDEO\n"
+				+ "- WEB\n"
+				+ "- EXCESS");
 		System.out.println("ADMIN DEFINED CLASSES:");
 		File curDir = new File(NEWCLASSDIR);
 		fileList = curDir.listFiles();
@@ -508,7 +532,9 @@ public class Functions{
 	}
 	
 //*******************************************************************************************************************************************	
-	
+	/**
+	 * @return the list of the IP address of any router attached to the network.
+	 */
 	private List<String> getRouterAddresses(){
 		List<String> routerAddrs = new LinkedList<>();
 		if (routerDescription ==  null) routerDescription = getRouterDesc();
@@ -532,7 +558,12 @@ public class Functions{
 		return valueList;
 	}
 	
-	
+	/**
+	 * Allow the user to check the class file passed by parameter using an interactive way to do
+	 * this job.
+	 * @param classFileName The file name user wants it to check
+	 * @throws IOException In case of reading from filesystem errors
+	 */
 	public void verifyNewClass(String classFileName) throws IOException {
 		Path classPath = Paths.get(NEWCLASSDIR, classFileName);
 		List<String> rows = Files.readAllLines(classPath);
@@ -581,12 +612,23 @@ public class Functions{
 	}
 	
 	
+	/**
+	 * Check if the input string s is a valid comma separated list of values
+	 * @param s	string to check
+	 * @return true if s is a valid comma separated list, false otherwise
+	 */
 	private boolean isCommaSeparated(String s) {
 		Pattern pattern = Pattern.compile("^(\\d+)(,\\s*\\d+)*$|^no$");
 		Matcher match = pattern.matcher(s);
 		return match.matches();
 	}
 	
+	
+	/**
+	 * Print the list fileContent with row number
+	 * @param fileContent a list of string. In the context of this function it is a list
+	 * of commands to be printed.
+	 */
 	private void printClassContent(List<String> fileContent) {
 		int rowNum = 0;
 		for (String row : fileContent) {
@@ -594,6 +636,7 @@ public class Functions{
 			System.out.printf("%d %s\n", rowNum, row);
 		}
 	}
+	
 		
 //*******************************************************************************************************************************************
 	/**
@@ -643,9 +686,11 @@ public class Functions{
 		router.disconnect();
 	}
 	
+	
 	/**
 	 * Read the file of the standard classes and return the list of command from it
 	 * @param className The name of the class file to be read
+	 * @param std If the class is a standard class or a custom one.
 	 * @return	List of commands written into the file
 	 * @throws IOException If reading the file makes some problems
 	 */
@@ -655,6 +700,19 @@ public class Functions{
 		
 	}
 	
+	
+	/** 
+	 * Create a list of commands to be applied to a Cisco router. Commands are different if the router is
+	 * a Border Router or not and if the class to get commands to is a standard class or a custom one.
+	 * It return a complete command list also if the user ask the function to return commands from more than
+	 * one class
+	 * @param pair	a Pair object which contains the name of interface and the IP address of it
+	 * @param classes list of name of classes
+	 * @param br true if the router is a Border Router or false otherwise
+	 * @param std true if the class the user wants the command to is a standard class
+	 * @return the complete list of commands needed to set a router up.
+	 * @throws IOException in case of file reading error
+	 */
 	public List<String> getClassConfigureCommands(Pair<String, String> pair, List<String> classes, boolean br, boolean std) throws IOException {
 		List<String> commands = new LinkedList<>();
 		int accessListNum = 101;
@@ -776,6 +834,14 @@ public class Functions{
 		return commands;
 	}
 	
+	
+	/**
+	 * Return the list of commands based on the name of the standard class stdClass and if the router
+	 * is a Border Router or not
+	 * @param stdClass the name of the standard class to get the command from
+	 * @param isBr true if the router is a border router or not
+	 * @return A list of commands for configuring the standard class into the router
+	 */
 	public List<String> readStdClassCommands (String stdClass, boolean isBr) {
 		List<String> commands = new LinkedList<>();
 		if (isBr == true) {
@@ -800,18 +866,17 @@ public class Functions{
 			default:
 				throw new IllegalArgumentException("no standard class called");
 			}
-			//commands.add("exit");
 		}
 		return commands;
 	}
 	
-	public boolean testIsBorderRouter(String ip) throws IOException {
-		OSPFRouter router = new OSPFRouter(ip);
-		router.connect(USER, PASSWORD);
-		boolean isRouterBR = router.isBorderRouter();
-		router.disconnect();
-		return isRouterBR;
-	}
+	/**
+	 * Check if the string passed is below the min or over the max included
+	 * @param input the input string. It has to be a comma separated value or a value alone
+	 * @param min the minimum value admissable for values of input
+	 * @param max the maximum value admissable for values of input
+	 * @return true if the comma separated list input has all its value inside the interval [min, max]
+	 */
 	
 	private boolean checkClass(String input, int min, int max) {
 		boolean okstd = true;
@@ -825,6 +890,12 @@ public class Functions{
 		return okstd;
 	}
 	
+	
+	/**
+	 * Print a menu and asks the user which class (custom or standard) to apply to a router.
+	 * @param std true if this function has to print only standard classes or only custom classes
+	 * @return a list of classes being chosen by the user
+	 */
 	private List<String> confMenu(boolean std) { 
 		List<String> cl = new ArrayList<>();
 		if(std) {

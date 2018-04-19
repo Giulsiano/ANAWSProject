@@ -55,6 +55,9 @@ public class OSPFRouter {
 		this.ip = ip;
 	}
 	
+	/**
+	 * @return if the router is in privileged execution mode or not
+	 */
 	public boolean isRoot() {
 		return isRoot;
 	}
@@ -94,10 +97,19 @@ public class OSPFRouter {
 		isConnected = true;
 	}
 
+	/**
+	 * Send the command to the physical router
+	 * @param command the command to send
+	 * @throws IOException if a connection error occours
+	 */
 	public void sendCommand(String command) throws IOException {
 		exp.sendLine(command);
 	}
 	
+	/**
+	 * @return the hostname of this router
+	 * @throws IOException in case of connection errors
+	 */
 	public String getHostname() throws IOException {
 		return hostname;
 	}
